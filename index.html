@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>長納期品 手配期限ツール</title>
+<style>
+:root{
+  --bg:#ECEFEE; --panel:#FFFFFF; --ink:#1D252C; --muted:#5C6870; --line:#C8D0D3; --line2:#E2E7E9;
+  --steel:#2F5670; --steel-ink:#FFFFFF; --caution:#F0B92B; --input:#FFF8DF;
+  --danger:#B3321F; --dangerbg:#F7DCD5; --warnbg:#FBEFC6; --ok:#2E7A4E; --okbg:#DDEFE3;
+  --cat:#1F5F8B; --ind:#B3321F;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14181B; --panel:#1D2327; --ink:#E5EAEC; --muted:#9AA6AD; --line:#36424B; --line2:#2A3339;
+    --steel:#6FA6CC; --steel-ink:#0E1418; --caution:#E5AE33; --input:#2C2918;
+    --danger:#F08068; --dangerbg:#4A231C; --warnbg:#43391A; --ok:#72C493; --okbg:#1E3A2A;
+    --cat:#7FB7E0; --ind:#F08068; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14181B; --panel:#1D2327; --ink:#E5EAEC; --muted:#9AA6AD; --line:#36424B; --line2:#2A3339;
+  --steel:#6FA6CC; --steel-ink:#0E1418; --caution:#E5AE33; --input:#2C2918;
+  --danger:#F08068; --dangerbg:#4A231C; --warnbg:#43391A; --ok:#72C493; --okbg:#1E3A2A;
+  --cat:#7FB7E0; --ind:#F08068; color-scheme: dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"BIZ UDPGothic","Yu Gothic UI","Hiragino Sans","Meiryo",system-ui,sans-serif;font-size:14px;line-height:1.55;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--caution);outline-offset:1px}
+
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--steel);color:var(--steel-ink)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--steel)}
+.bar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:10px 20px 0}
+.brand{font-weight:700;font-size:17px;letter-spacing:.02em;padding-bottom:10px}
+.brand small{font-weight:400;opacity:.8;font-size:12px;margin-left:8px}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav button{background:transparent;border:0;color:inherit;opacity:.78;padding:9px 14px 11px;cursor:pointer;border-radius:6px 6px 0 0;font-weight:600}
+nav button[aria-selected="true"]{background:var(--bg);color:var(--ink);opacity:1}
+nav button:hover{opacity:1}
+.stripe{height:5px;background:repeating-linear-gradient(-45deg,var(--caution) 0 10px,#1D252C 10px 20px)}
+
+main{padding:18px 20px 40px;max-width:1600px;margin:0 auto}
+.view{display:none}.view.on{display:block}
+h2{font-size:18px;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 14px;max-width:75ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+
+.order{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start}
+@media (max-width:980px){.order{grid-template-columns:1fr}}
+.order>*{min-width:0}
+.field{display:grid;grid-template-columns:110px 1fr;align-items:center;gap:8px;margin-bottom:10px}
+.field label{font-weight:600;font-size:13px}
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--input);border:1px solid var(--line);border-left:4px solid var(--caution);border-radius:4px;padding:6px 8px;min-width:0;width:100%}
+input[type=number]{text-align:right}
+.ro{background:transparent;border:0;padding:0}
+.mlist{margin-top:14px;border-top:1px solid var(--line2);padding-top:12px}
+.mlist h3,.panel h3{font-size:14px;margin:0 0 8px}
+.mrow{display:grid;grid-template-columns:auto 52px 1fr;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line2)}
+.mrow .code{font-weight:700;font-size:15px}
+.mrow input[type=date]:disabled{opacity:.35;border-left-color:var(--line)}
+.mrow.sel .code{color:var(--steel)}
+.bulk{display:flex;gap:6px;margin:8px 0 2px}
+.bulk input{flex:1;min-width:120px}
+.mdates{display:grid;grid-template-columns:1fr;gap:3px;margin:2px 0 8px 26px}
+.mdates label{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.mdates input{padding:3px 6px}
+.pmx{display:grid;gap:6px;margin:6px 0 4px}
+.pmrow{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.pmrow b{min-width:40px}
+.pmrow label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.pmrow input{width:150px}
+.fbn{font-size:11px;color:var(--muted);white-space:nowrap}
+
+.kpi{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end;padding:4px 2px 12px}
+.kpi div{display:flex;flex-direction:column}
+.kpi b{font-size:26px;line-height:1.1}
+.kpi span{color:var(--muted);font-size:12px}
+.kpi .bad b{color:var(--danger)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.tools .sp{flex:1}
+.chk{display:inline-flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:6px 12px;cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--steel);color:var(--steel-ink);border-color:var(--steel)}
+.btn.dangerbtn{color:var(--danger)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--panel);max-height:70vh}
+table{border-collapse:collapse;width:100%;font-size:13px}
+#olist{min-width:1350px}#ittable{min-width:1150px}#mltable{min-width:1000px}#ittable td input[type=number]{width:80px}#olist th{vertical-align:bottom}#olist th.wrap{white-space:normal}#mtable{min-width:1300px}
+td.nw{white-space:nowrap}td.wide{min-width:170px}td.info{min-width:260px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:700;font-size:12px;color:var(--muted);border-bottom:2px solid var(--line);padding:7px 8px;white-space:nowrap;z-index:1}
+td{border-bottom:1px solid var(--line2);padding:6px 8px;vertical-align:top}
+td.num,th.num{text-align:right}
+tr.late td{background:var(--dangerbg)}
+tr.soon td{background:var(--warnbg)}
+tr.off td{color:var(--muted);text-decoration:line-through}
+.deadline{font-weight:700;white-space:nowrap}
+.mg{display:flex;align-items:center;gap:6px;justify-content:flex-end;white-space:nowrap}
+.mg i{display:inline-block;height:8px;border-radius:2px;background:var(--ok)}
+.mg.l i{background:var(--danger)} .mg.s i{background:var(--caution)}
+.mg.l b{color:var(--danger)}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:3px;padding:1px 6px;white-space:nowrap}
+.tag.long{background:var(--dangerbg);color:var(--danger)}
+.tag.warn{background:var(--warnbg);color:var(--ink)}
+.src{font-size:11px;font-weight:700}
+.src.個別{color:var(--ind)} .src.分類{color:var(--cat)} .src.実績{color:var(--muted)}
+.small{font-size:12px;color:var(--muted)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+td input[type=number]{width:72px}
+td input[type=text]{min-width:120px}
+td select{min-width:150px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.filters > *{width:auto}.filters input[type=text]{width:280px}.filters .chk{margin-left:4px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.addform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
+.nb{display:inline-block;min-width:20px;margin-left:6px;padding:0 6px;border-radius:10px;background:var(--caution);color:#1D252C;font-size:12px;line-height:18px;text-align:center}
+.notice{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--caution);border-radius:6px;padding:12px 14px;margin-bottom:14px}
+.notice.bad{border-left-color:var(--danger)}
+.notice h3{margin:0 0 4px;font-size:15px}
+.notice ul{margin:6px 0 10px;padding-left:18px;max-height:180px;overflow:auto}
+.notice li{margin:2px 0}
+.proj{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}
+@media (max-width:980px){.proj{grid-template-columns:1fr}}
+.proj>*{min-width:0}
+.plist button{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:5px;padding:8px 10px;margin-bottom:6px;cursor:pointer}
+.plist button[aria-current="true"]{border-left-color:var(--steel);background:var(--input)}
+.plist b{display:block;font-size:15px}
+.plist .bad{color:var(--danger);font-weight:700}
+.phead{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:10px}
+.phead .field{margin:0;grid-template-columns:auto 160px}
+.pm{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 12px}
+.pm label{display:flex;align-items:center;gap:6px;font-weight:700}
+.pm input{width:150px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:6px 12px;cursor:pointer;font-weight:600;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--steel);color:var(--steel-ink)}
+#ptable{min-width:0}#ptable td.info{min-width:280px}#ptable .rgt{color:var(--muted);font-size:12px;border-left:1px dashed var(--line2)}
+tr.done td{background:var(--okbg)}
+tr.done td.nm{text-decoration:none}
+.donemark{color:var(--ok);font-weight:700;white-space:nowrap}
+.extra{font-size:11px;font-weight:700;color:var(--cat);margin-left:4px;white-space:nowrap}
+td input[type=date]{width:140px}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+@media (max-width:1100px){.cols3{grid-template-columns:1fr}}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.col h3{margin:0;padding:10px 12px;background:var(--steel);color:var(--steel-ink);font-size:15px;display:flex;justify-content:space-between;align-items:baseline}
+.col h3 span{font-size:12px;font-weight:400;opacity:.85}
+.col .body{max-height:68vh;overflow:auto}
+.col .sub{display:grid;grid-template-columns:1fr 78px 52px;gap:6px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--muted);border-bottom:2px solid var(--line)}
+.col .sub span:nth-child(2){text-align:center}
+.it{padding:8px 12px;border-bottom:1px solid var(--line2)}
+.it.del{opacity:.6}
+.it .l1{display:grid;grid-template-columns:1fr 78px auto;gap:6px;align-items:center}
+.it .l1 input[type=number]{width:100%}
+.it .l2{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-top:5px}
+.it .meta{font-size:11px;color:var(--muted);line-height:1.4;white-space:nowrap}
+.it .orig{font-size:11px;color:var(--muted);margin-top:2px}
+.it .d{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+.it.chg .l1 input[type=number]{color:var(--ind);font-weight:700}
+#ittable{min-width:1150px}
+tr.sec td{background:var(--steel);color:var(--steel-ink);font-weight:700;position:sticky;top:33px;z-index:1}
+td.old{background:#FBD9B5;color:#7A3A00;font-weight:700}
+.oldtag{display:inline-block;margin-left:6px;font-size:11px;padding:0 5px;border-radius:3px;background:#E8892B;color:#fff}
+tr.chg input[data-f="lead"]{color:var(--ind);font-weight:700}
+#deldlg{border:1px solid var(--line);border-radius:10px;padding:18px 20px;max-width:520px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
+#deldlg::backdrop{background:rgba(0,0,0,.35)}
+#deldlg h3{margin:0 0 6px;font-size:16px}
+.dlgbtns{display:grid;gap:8px;margin-top:8px}
+.dlgbtns .btn{text-align:left;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.dlgbtns .btn span{font-weight:400;font-size:12px;color:var(--muted)}
+.mchip{display:inline-flex;align-items:center;gap:2px;background:var(--line2);border-radius:10px;padding:0 3px 0 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12px}
+.mchip button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px;line-height:18px}
+.mchip button:hover{color:var(--danger)}
+.mplus{padding:0 7px;font-size:11px;line-height:18px}
+#madddlg,#oedlg{border:1px solid var(--line);border-radius:10px;padding:18px 20px;max-width:420px;width:calc(100% - 32px);background:var(--panel);color:var(--ink)}
+#madddlg::backdrop,#oedlg::backdrop{background:rgba(0,0,0,.35)}
+#madddlg h3,#oedlg h3{margin:0 0 8px;font-size:16px}
+#oedlg{max-width:480px}
+.oenote{margin:-6px 0 10px 118px}
+.oadd .addform label.dl{display:grid;gap:2px;font-size:11px;color:var(--muted)}
+.ochg{color:var(--ind);font-weight:700}
+td .obtns{display:flex;gap:4px}
+.allbtns{display:flex;gap:6px;margin:6px 0 4px}
+.allbtns .btn{padding:4px 10px;font-size:12px}
+.allchk{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:1px 8px;border:1px dashed var(--line);border-radius:10px;margin:0 4px 3px 0;cursor:pointer;white-space:nowrap}
+.allchk.on{background:var(--steel);color:var(--steel-ink);border-style:solid;border-color:var(--steel)}
+[hidden]{display:none!important}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media print{
+  header,.stripe,.order>.panel:first-child,.tools,nav,.oadd,.obtns{display:none!important}
+  .order{display:block} .tw{max-height:none;border:0;overflow:visible} body{background:#fff}
+  th{position:static}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">長納期品 手配期限ツール<small id="ver"></small></div>
+    <nav role="tablist" aria-label="画面の切り替え">
+      <button role="tab" aria-selected="true" data-v="v-order">受注時リスト</button>
+      <button role="tab" aria-selected="false" data-v="v-proj">案件管理<span id="nbadge"></span></button>
+      <button role="tab" aria-selected="false" data-v="v-items">長納期品マスタ</button>
+      <button role="tab" aria-selected="false" data-v="v-cat">分類</button>
+      <button role="tab" aria-selected="false" data-v="v-set">設定・データ</button>
+    </nav>
+  </div>
+  <div class="stripe"></div>
+</header>
+
+<main>
+<!-- 受注時リスト -->
+<section class="view on" id="v-order">
+  <div class="order">
+    <div class="panel">
+      <h3>受注情報</h3>
+      <div class="field"><label for="o-no">工事番号</label><input type="text" id="o-no"></div>
+      <div class="field"><label for="o-date">受注日</label><input type="date" id="o-date"></div>
+      <div class="field"><label for="o-min">載せる最低日数</label><input type="number" id="o-min" min="0"></div>
+      <div class="mlist">
+        <h3>対象の機械と組立開始日</h3>
+        <div class="bulk"><select id="bulk-dk" aria-label="一括入力する日付の種類" style="width:96px;flex:none"><option value="a1">組立①</option><option value="a2">組立②</option><option value="pn">盤組</option></select><input type="date" id="bulk-date" aria-label="一括入力する日付"><button class="btn" id="bulk-btn">選択中の機械に一括入力</button></div>
+        <div id="mrows"></div>
+        <div class="bulk"><input type="text" id="new-m" placeholder="新しい機械の記号" aria-label="新しい機械の記号"><button class="btn" id="new-m-btn">機械を追加</button></div>
+        <h3 style="margin-top:14px">電気品（盤組開始日）</h3>
+        <p class="small" style="margin:0 0 4px">電気品は機械とは別のくくりで選びます。</p>
+        <div id="erows"></div>
+        <div class="bulk"><input type="text" id="new-e" placeholder="新しい電気の機械名" aria-label="新しい電気の機械名"><button class="btn" id="new-e-btn">電気を追加</button></div>
+      </div>
+      <p class="small">入力内容はこのPCのブラウザに自動で保存されます。LMガイドやモーターなど同じ分類に複数の品目があるものは、リストの品名のプルダウンで今回のサイズ・容量を選べます（マスタは変わりません）。各行の「編集」で品名・ユニット・納期・手配期限・備考を今回だけ変更でき、リストの下から品目を追加できます。変更・追加した内容は「案件として保存」で案件に入ります。</p>
+    </div>
+    <div>
+      <div class="kpi" id="kpi"></div>
+      <div class="tools">
+        <label class="chk"><input type="checkbox" id="t-sort"> 手配期限の早い順</label>
+        <label class="chk"><input type="checkbox" id="t-urgent"> 遅れと30日以内だけ</label>
+        <span class="sp"></span>
+        <button class="btn" id="odelreset-btn">削除を元に戻す<span id="odelcnt"></span></button>
+        <button class="btn" id="swreset-btn">選び直しを元に戻す</button>
+        <button class="btn pri" id="saveproj-btn">案件として保存</button>
+        <button class="btn" id="csv-btn">Excel用に書き出す（CSV）</button>
+        <button class="btn" id="print-btn">印刷</button>
+      </div>
+      <div class="filters" id="ofilt"></div>
+      <div class="tw"><table id="olist"></table></div>
+      <div class="panel oadd" style="margin-top:12px">
+        <h3>今回のリストに品目を追加</h3>
+        <p class="small" style="margin:0 0 4px">マスタにない品目や、今回だけ必要な品目を追加します。品名を候補から選ぶと、分類と最新納期が入ります。最新納期か手配期限のどちらかを入れてください。</p>
+        <div class="addform">
+          <select id="oa-k" aria-label="区分"><option>購入品</option><option>電気品</option><option>製作品</option></select>
+          <select id="oa-m" aria-label="機械"></select>
+          <input type="text" id="oa-u" placeholder="ユニット（例：PR）" aria-label="ユニット">
+          <select id="oa-c" aria-label="分類"></select>
+          <input type="text" id="oa-name" placeholder="品名" aria-label="品名" list="oa-list">
+          <datalist id="oa-list"></datalist>
+          <input type="number" id="oa-days" min="0" placeholder="最新納期（日）" aria-label="最新納期（日）">
+          <select id="oa-dk" aria-label="基準日"><option value="a1">基準：組立①</option><option value="a2">基準：組立②</option></select>
+          <label class="dl">手配期限を直接指定（任意）<input type="date" id="oa-dl" aria-label="手配期限を直接指定"></label>
+          <input type="text" id="oa-note" placeholder="備考（任意）" aria-label="備考">
+        </div>
+        <div class="tools" style="margin:10px 0 0">
+          <label class="chk"><input type="checkbox" id="oa-master"> 長納期品マスタにも登録し、次の受注からもこの機械で使う</label>
+          <span class="sp"></span>
+          <button class="btn" id="oa-clear">追加・編集をすべて元に戻す<span id="oa-cnt"></span></button>
+          <button class="btn pri" id="oa-btn">リストに追加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 案件管理 -->
+<section class="view" id="v-proj">
+  <div id="notice"></div>
+  <div class="proj">
+    <div>
+      <h3 style="margin:0 0 8px">保存した案件</h3>
+      <div class="plist" id="plist"></div>
+      <p class="small">受注時リストの「案件として保存」で追加されます。</p>
+    </div>
+    <div id="pdetail"></div>
+  </div>
+</section>
+
+<!-- 長納期品マスタ -->
+<section class="view" id="v-items">
+  <h2>長納期品マスタ</h2>
+  <p class="lead">品目ごとの最新納期を管理します。最新納期を変えると、その品目を使うすべての機械に反映されます。機械を選ぶと、その機械で使う長納期品だけを表示し、区分ごとの件数と最長納期、ユニット、機械ごとの備考を確認・編集できます。機械を選んだ画面では、品名のプルダウンで同じ分類の別の品目（例：LMガイド（標準）→LMガイド（大型・長尺））に付け替えられます。初期値は直近の発注実績の調達日数です。型式は区別せず、品名ごとに1つの納期で管理します。確認日には、最新納期・品名・備考を変更した日が自動で入ります。確認日から60日以上たった品目は、確認日がオレンジ色になります。表記ゆれ（例：油圧シリンダー・油圧シリンダ）は1つの品名にまとめ、まとめた品名を下に表示しています。</p>
+  <div class="filters">
+    <select id="it-m" aria-label="機械で絞り込み"></select>
+    <select id="it-k" aria-label="区分で絞り込み"><option value="">すべての区分</option><option>購入品</option><option>電気品</option><option>製作品</option></select>
+    <select id="it-c" aria-label="分類で絞り込み"></select>
+    <input type="text" id="it-q" placeholder="品名・分類で検索" aria-label="検索">
+    <label class="chk"><input type="checkbox" id="it-old"> 確認から60日以上の品目だけ</label>
+    <label class="chk"><input type="checkbox" id="it-ch"> 更新した品目だけ</label>
+    <label class="chk"><input type="checkbox" id="it-del"> 削除した品目を表示</label>
+    <button class="btn" id="it-csv">Excel用に書き出す（CSV）</button>
+  </div>
+  <div class="kpi" id="it-sum"></div>
+  <div class="tw" id="itcols"><table id="ittable"></table></div>
+  <div class="panel" style="margin-top:16px" id="ma-panel" hidden>
+    <h3 id="ma-title">この機械に長納期品を追加</h3>
+    <p class="small">長納期品マスタにある品目を選びます。マスタにない品目は、先に下の「品目を登録」で登録してください。</p>
+    <div class="addform">
+      <input type="text" id="ma-u" placeholder="ユニット（例：PR）" aria-label="ユニット">
+      <input type="text" id="ma-q" placeholder="品目を検索（品名）" aria-label="品目を検索" list="ma-dl">
+      <datalist id="ma-dl"></datalist>
+      <input type="text" id="ma-note" placeholder="この機械での備考（任意）" aria-label="この機械での備考">
+      <button class="btn pri" id="ma-btn">追加</button>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3>品目を登録</h3>
+    <div class="addform">
+      <select id="ia-k" aria-label="区分"><option>購入品</option><option>電気品</option><option>製作品</option></select>
+      <select id="ia-c" aria-label="分類"></select>
+      <input type="text" id="ia-name" placeholder="品名" aria-label="品名">
+      <input type="number" id="ia-lead" placeholder="最新納期（日）" aria-label="最新納期">
+      <input type="text" id="ia-note" placeholder="備考（任意）" aria-label="備考">
+      <button class="btn pri" id="ia-btn">登録</button>
+    </div>
+  </div>
+</section>
+
+<!-- 分類 -->
+<section class="view" id="v-cat">
+  <h2>分類</h2>
+  <p class="lead">分類ごとに「決める人」と「発注に最低限必要な情報」を設定します。分類は品目の多い区分（購入品・電気品・製作品）ごとに五十音順で並び、「その他」は最後です。分類名は直接書き換えられ、品目にもそのまま反映されます。削除した分類の品目は「その他」に移ります。受注時リストと案件管理に表示されます。</p>
+  <div class="tw"><table id="ctable"></table></div>
+  <div class="panel" style="margin-top:16px">
+    <h3>分類を追加</h3>
+    <div class="addform">
+      <select id="nc-k" aria-label="区分"><option>購入品</option><option>電気品</option><option>製作品</option></select>
+      <input type="text" id="nc-name" placeholder="分類名" aria-label="分類名">
+      <select id="nc-who" aria-label="決める人"><option>設計</option><option>電気技術</option><option>設計・電気技術</option><option>営業</option><option>操業</option><option>その他</option></select>
+      <input type="text" id="nc-info" placeholder="発注に最低限必要な情報" aria-label="発注に最低限必要な情報">
+      <button class="btn pri" id="nc-btn">分類を追加</button>
+    </div>
+  </div>
+</section>
+
+<!-- 設定・データ -->
+<section class="view" id="v-set">
+  <h2>設定・データ</h2>
+  <div class="grid2">
+    <div class="panel">
+      <h3>しきい値と余裕日数</h3>
+      <div class="field"><label for="s-long">長納期（日以上）</label><input type="number" id="s-long"></div>
+      <div class="field"><label for="s-warn">要注意（日以上）</label><input type="number" id="s-warn"></div>
+      <div class="field"><label for="s-buf">余裕日数</label><input type="number" id="s-buf"></div>
+      <div class="field"><label for="s-mail">お知らせの宛先</label><input type="text" id="s-mail" placeholder="例：morimura@example.co.jp"></div>
+      <p class="small">手配リード目安＝最新納期＋余裕日数。手配期限＝組立開始日−手配リード目安。</p>
+    </div>
+    <div class="panel">
+      <h3>データの共有</h3>
+      <p class="small">マスタの変更・設定・保存した案件は全員で共有され、編集すると自動で保存されます（保存できるのは工程表の編集者のみ）。受注時リストの入力中の内容は、このPCにだけ残ります。「書き出す」は手元に控えを残すときに使います。</p>
+      <div class="tools">
+        <button class="btn pri" id="ex-btn">控えを書き出す（JSON）</button>
+        <label class="btn" for="im-file" hidden>データを読み込む</label>
+        <input type="file" id="im-file" accept=".json,application/json" hidden>
+      </div>
+      <p class="small" id="last-ex"></p>
+      <button class="btn dangerbtn" id="reset-btn" hidden>すべて初期データに戻す</button>
+    </div>
+    <div class="panel">
+      <h3>ユニット名称</h3>
+      <p class="small">記号に名称を付けると、受注時リストに表示されます。</p>
+      <select id="un-m" aria-label="機械"></select>
+      <div id="un-list" style="margin-top:8px"></div>
+    </div>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="madddlg" aria-labelledby="madddlg-t">
+  <h3 id="madddlg-t">使う機械を追加</h3>
+  <p class="small" id="madd-name"></p>
+  <div class="field"><label for="madd-m">機械</label><select id="madd-m"></select></div>
+  <div class="field" id="madd-newrow" hidden><label for="madd-new">新しい名前</label><input type="text" id="madd-new" placeholder="例：MLD"></div>
+  <div class="field"><label for="madd-u">ユニット</label><input type="text" id="madd-u" placeholder="例：PR"></div>
+  <div class="field"><label for="madd-n">この機械での備考</label><input type="text" id="madd-n" placeholder="任意"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" id="madd-cancel">やめる</button><button class="btn pri" id="madd-ok">追加</button></div>
+</dialog>
+<dialog id="oedlg" aria-labelledby="oedlg-t">
+  <h3 id="oedlg-t">この行を編集（今回のリストだけ）</h3>
+  <p class="small" id="oe-info" style="margin:0 0 10px"></p>
+  <div class="field"><label for="oe-name">品名</label><input type="text" id="oe-name"></div>
+  <div class="field" id="oe-urow"><label for="oe-u">ユニット</label><input type="text" id="oe-u"></div>
+  <div class="field"><label for="oe-days">最新納期（日）</label><input type="number" id="oe-days" min="0"></div>
+  <label class="chk small oenote" id="oe-mrow"><input type="checkbox" id="oe-master"> 長納期品マスタの最新納期も変える（この品目を使うすべての機械に反映）</label>
+  <div class="field"><label for="oe-dl">手配期限</label><input type="date" id="oe-dl"></div>
+  <p class="small oenote" id="oe-dlnote"></p>
+  <div class="field"><label for="oe-note">備考</label><input type="text" id="oe-note"></div>
+  <div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;margin-top:6px"><button class="btn" id="oe-reset">この行の変更を元に戻す</button><span style="display:flex;gap:8px"><button class="btn" id="oe-cancel">やめる</button><button class="btn pri" id="oe-ok">反映する</button></span></div>
+</dialog>
+<dialog id="deldlg" aria-labelledby="deldlg-t">
+  <h3 id="deldlg-t">削除のしかたを選んでください</h3>
+  <p id="deldlg-msg" class="small"></p>
+  <div class="dlgbtns">
+    <button class="btn" data-dch="order"><b>今回のリストからだけ削除</b><span>マスタは変わりません。次の受注では表示されます</span></button>
+    <button class="btn" data-dch="machine"><b>この機械のマスタからも外す</b><span id="deldlg-m"></span></button>
+    <button class="btn dangerbtn" data-dch="item"><b>長納期品マスタから品目ごと削除</b><span id="deldlg-i"></span></button>
+  </div>
+  <div style="text-align:right;margin-top:10px"><button class="btn" data-dch="cancel">やめる</button></div>
+</dialog>
+
+<script src="supabase.min.js"></script>
+<script src="m365-login.js"></script>
+<!-- ツール本体：longlead-db.js がデータを読み込んだ後に起動する（森村さんが修正するのはこの中） -->
+<script type="text/plain" id="ll-app">
+const BASE = window.__LL_BASE; // DB版：Supabase の longlead_docs（base）から読み込む
+const KEY = "longlead-simple-v1", OLDKEYS = ["longlead-tool-v4","longlead-tool-v3","longlead-tool-v2","longlead-tool-v1"];
+const DEF = {projects:[],curProject:null,order:{no:"",date:"",min:null,machines:{}},settings:{long:90,warn:60,buf:14,mail:""},
+  itemEdit:{},itemAdd:[],rowOff:{},rowNote:{},rowAdd:[],rowItem:{},itemDel:{},rowDate:{},catRename:{},catDel:{},catEdit:{},catAdd:[],unitName:{},machinesAdd:[],emachinesAdd:[],itemAll:{},lastExport:""};
+const SEED = null; // DB版：使わない（共有データは longlead_docs の state）
+const SEED_DATE = window.__LL_DATE || "";
+let S = load();
+function load(){
+  // DB版：共有データ（Supabase）とこのPCだけの入力中データを合わせる
+  return Object.assign(structuredClone(DEF),structuredClone(window.__LL_STATE||{}),structuredClone(window.__LL_LOCAL||{}));
+}
+function save(){ LLDB.save(S); } // DB版：Supabase に保存（longlead-db.js）
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),1800);}
+$("#ver").textContent="データ "+BASE.version+(SEED_DATE?"（共有データ "+SEED_DATE+" 更新）":"");
+function num(v){return v===""||v===null||v===undefined||isNaN(+v)?null:+v;}
+const DAY=86400000;
+function dnum(s){if(!s)return null;const [y,m,d]=s.split("-").map(Number);return Date.UTC(y,m-1,d)/DAY;}
+function dstr(n){if(n===null||n===undefined)return "";const d=new Date(n*DAY);return d.getUTCFullYear()+"/"+String(d.getUTCMonth()+1).padStart(2,"0")+"/"+String(d.getUTCDate()).padStart(2,"0");}
+function today(){const t=new Date();return Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())/DAY;}
+function todayIso(){return new Date(today()*DAY).toISOString().slice(0,10);}
+function kshort(k){return k==="購入品（機械・油空圧）"?"購入品":k;}
+const FKEYS=[["m","機械"],["k","区分"],["c","分類"],["dk","基準日"],["who","決める人"]];
+function fval(r,k){ if(k==="k") return kshort(r.k); if(k==="dk") return DKL[r.dk||defDk(r.k,r.u)]||""; return r[k]||""; }
+function filterBar(id,rows,F){
+  const col=new Intl.Collator("ja",{numeric:true});
+  const sel=FKEYS.map(([k,l])=>{const vs=[...new Set(rows.map(r=>fval(r,k)).filter(Boolean))].sort((a,b)=>col.compare(a,b));
+    return `<select data-fk="${k}" aria-label="${l}で絞り込み" style="width:auto;max-width:200px"><option value="">${l}：すべて</option>${vs.map(v=>`<option ${F[k]===v?"selected":""}>${esc(v)}</option>`).join("")}</select>`;}).join("");
+  return sel+`<input type="text" data-fk="q" value="${esc(F.q||"")}" placeholder="品名・ユニット・備考で検索" aria-label="キーワードで絞り込み" style="width:220px"><button class="btn" data-fclear="1">絞り込みを解除</button>`;
+}
+function applyF(rows,F){ return rows.filter(r=>FKEYS.every(([k])=>!F[k]||fval(r,k)===F[k])&&(!F.q||[r.name,r.u,r.uname,r.note,r.c,r.orig].join(" ").includes(F.q))); }
+function fActive(F){return Object.values(F).some(Boolean);}
+function nameSel(r){
+  const col=new Intl.Collator("ja",{numeric:true}); const opts=items().filter(x=>x.c===r.c).sort((a,b)=>col.compare(a.name||"",b.name||""));
+  if(opts.length<2) return esc(r.name);
+  return `<select data-orid="${r.id}" aria-label="今回使う品目（サイズ・容量）" style="min-width:200px">${opts.map(x=>`<option value="${x.id}" ${x.id===r.itemId?"selected":""}>${esc(x.name)}（${x.lead??"－"}日）</option>`).join("")}</select>`+(r.swapped?`<div class="small"><span class="extra" style="margin:0">今回変更（元：${esc(r.origName)}）</span></div>`:"");
+}
+function tag(j){return j==="長納期"?`<span class="tag long">長納期</span>`:(j==="要注意"?`<span class="tag warn">要注意</span>`:"");}
+function judge(d){const st=S.settings;return d===null?"":(d>=st.long?"長納期":(d>=st.warn?"要注意":""));}
+
+// ---- model
+const WHO=["設計","電気技術","設計・電気技術","営業","操業","その他"];
+function mapWho(v){v=v||""; if(WHO.includes(v)) return v; if(v.includes("営業")) return "営業"; if(v.includes("操業")) return "操業"; if(v.includes("要確認")) return "その他"; if(v.startsWith("電気")) return "電気技術"; return "設計";}
+function resolveCat(n){let x=n,g=0; while(S.catRename[x]&&g++<20) x=S.catRename[x]; return S.catDel[x]?"その他":x;}
+function cats(){
+  const list=BASE.cats.map(c=>Object.assign({},c,{c:resolveCat(c.c)}));
+  S.catAdd.forEach(c=>list.push(Object.assign({},c,{c:resolveCat(c.c)})));
+  const seen=new Set(), out=[];
+  list.forEach(c=>{ if(S.catDel[c.c]||seen.has(c.c)) return; seen.add(c.c); Object.assign(c,S.catEdit[c.c]||{}); c.who=mapWho(c.who); out.push(c); });
+  return out;
+}
+function catMap(){const m={};cats().forEach(c=>m[c.c]=c);return m;}
+function allItems(){return BASE.items.map(i=>Object.assign({},i,S.itemEdit[i.id]||{})).concat(S.itemAdd.map(i=>Object.assign({},i))).map(i=>(i.c=resolveCat(i.c),i));}
+function items(){return allItems().filter(i=>!S.itemDel[i.id]);}
+function itemMap(){const m={};items().forEach(i=>m[i.id]=i);return m;}
+function mrows(){return BASE.mrows.concat(S.rowAdd);}
+function itemK(id){const b=BASE.items.find(x=>x.id===id)||S.itemAdd.find(x=>x.id===id); return b?b.k:"";}
+function rowE(r){return itemK(rItem(r))==="電気品";}
+function machines(){return [...new Set(mrows().filter(r=>!rowE(r)).map(r=>r.m).concat(S.machinesAdd))].sort();}
+function emachines(){return [...new Set(mrows().filter(r=>rowE(r)).map(r=>r.m).concat(S.emachinesAdd||[]))].sort();}
+function minDays(){const v=num(S.order.min);return v===null?(+S.settings.warn):v;}
+function rItem(r){const v=S.rowItem[r.id]; return (v&&!S.itemDel[v])?v:r.item;}
+function rowAlive(r){return !S.itemDel[rItem(r)];}
+function joinRow(r,im,cm,ov){
+  const it=im[ov||rItem(r)]||{}; const days=num(it.lead); const c=cm[it.c]||{};
+  const notes=[S.rowNote[r.id],it.note].filter(Boolean).join("／");
+  return {id:r.id,m:r.m,u:r.u,itemId:ov||rItem(r),grp:it.grp,k:it.k,c:it.c,name:it.name,model:"",days,lead:days===null?null:days+(+S.settings.buf||0),
+    judge:judge(days),who:c.who||"要確認",info:c.info||"要確認",note:notes,uname:S.unitName[r.m+"|"+r.u]||""};
+}
+const DK=[["a1","組立①"],["a2","組立②"],["pn","盤組"]], DKL={a1:"組立①",a2:"組立②",pn:"盤組"};
+function isEE(u,k){return u==="EE"||k==="電気品";}
+function defDk(k,u){return isEE(u,k)?"pn":"a1";}
+function mdates(mo){ if(!mo) return {a1:"",a2:"",pn:""}; if(typeof mo==="string") return {a1:mo,a2:"",pn:""}; return {a1:mo.date||mo.a1||"",a2:mo.a2||"",pn:mo.pn||""}; }
+function baseDate(mo,dk){const d=mdates(mo); let v=d[dk]; let fb=false; if(!v&&dk!=="a1"&&d.a1){v=d.a1;fb=true;} return {n:v?dnum(v):null,fb};}
+function dkSel(attr,val,lab,ee){ if(ee) return `<span class="small"><b>盤組</b></span>`;
+  return `<select ${attr} aria-label="${lab}" style="width:92px;padding:3px 4px">${DK.filter(([k])=>k!=="pn").map(([k,l])=>`<option value="${k}" ${k===val?"selected":""}>${l}</option>`).join("")}</select>`;}
+function isCommon(id){return !!(S.itemAll||{})[id];}
+function earliest(list){const v=list.filter(Boolean).map(dnum).filter(x=>x!==null);return v.length?Math.min(...v):null;}
+function commonBase(elec,mech,ele){ // mech: {m:dates}, ele: {m:{pn}}
+  const a1=earliest(Object.values(mech).map(d=>mdates(d).a1)), pn=earliest(Object.values(ele).map(d=>(d||{}).pn));
+  if(elec) return pn!==null?{n:pn,dk:"pn",fb:false}:{n:a1,dk:"a1",fb:a1!==null};
+  return a1!==null?{n:a1,dk:"a1",fb:false}:{n:pn,dk:"pn",fb:pn!==null};
+}
+function oEdit(id){return (S.order.edit||{})[id]||null;}
+function hasK(o,k){return !!o&&Object.prototype.hasOwnProperty.call(o,k);}
+function isoOf(n){return n===null||n===undefined?"":new Date(n*DAY).toISOString().slice(0,10);}
+function applyEdit(j,e){ // 今回だけの編集を行に反映
+  j.bName=j.name; j.bU=j.u; j.bDays=j.days; j.bNote=j.note||""; j.edits=[];
+  if(!e) return;
+  if(hasK(e,"name")&&e.name&&e.name!==j.name){ if(!j.swapped) j.origName=j.name; j.nameEdit=true; j.name=e.name; j.edits.push("品名"); }
+  if(hasK(e,"u")&&!j.common&&e.u!==j.u){ j.origU=j.u; j.u=e.u; j.uname=S.unitName[j.m+"|"+e.u]||""; j.edits.push("ユニット"); }
+  if(hasK(e,"days")&&e.days!==null&&e.days!==j.days){ j.origDays=j.days; j.days=e.days; j.lead=e.days+(+S.settings.buf||0); j.judge=judge(e.days); j.edits.push("納期"); }
+  if(hasK(e,"note")&&e.note!==(j.note||"")){ j.note=e.note; j.edits.push("備考"); }
+}
+function finishRow(j,bd,e,td){ // 手配期限（直接指定があれば優先）
+  const calc=(bd.n!==null&&j.lead!==null)?bd.n-j.lead:null; let dl=calc, fix=false;
+  if(e&&e.dl){ dl=dnum(e.dl); fix=true; j.edits.push("手配期限"); }
+  return Object.assign(j,{fb:bd.fb,dl,dlCalc:calc,fixDl:fix,margin:dl===null?null:dl-td});
+}
+function orderRows(){
+  const im=itemMap(), cm=catMap(), td=today(), mn=minDays(), out=[], keep=S.order.keep||{};
+  mrows().forEach(r=>{
+    if(isCommon(rItem(r))) return;
+    const isE=rowE(r); const mo=isE?(S.order.emach||{})[r.m]:S.order.machines[r.m]; if(!mo||!mo.on||S.rowOff[r.id]||!rowAlive(r)||(S.order.del||{})[r.id]) return;
+    const sw=(S.order.swap||{})[r.id]; const ov=(sw&&im[sw])?sw:null;
+    const j0=joinRow(r,im,cm); const j=ov?joinRow(r,im,cm,ov):j0;
+    const e=oEdit(r.id);
+    if(!keep[r.id]&&!e&&!((j0.days!==null&&j0.days>=mn)||(j.days!==null&&j.days>=mn))) return;
+    if(ov){ j.swapped=true; j.origName=j0.name; }
+    applyEdit(j,e);
+    const dk=isE?"pn":((S.order.dk||{})[r.id]||S.rowDate[r.id]||"a1"); const bd=isE?{n:mo.pn?dnum(mo.pn):null,fb:false}:baseDate(mo,dk);
+    j.dk=dk; j.src="マスタ"; out.push(finishRow(j,bd,e,td));
+  });
+  const mech={}, ele={}; Object.keys(S.order.machines||{}).forEach(m=>{const o=S.order.machines[m]; if(o&&o.on&&machines().includes(m)) mech[m]=o;});
+  Object.keys(S.order.emach||{}).forEach(m=>{const o=S.order.emach[m]; if(o&&o.on&&emachines().includes(m)) ele[m]=o;});
+  if(Object.keys(mech).length||Object.keys(ele).length){
+    items().filter(i=>isCommon(i.id)).forEach(i=>{ const id="all:"+i.id; if((S.order.del||{})[id]) return;
+      const sw=(S.order.swap||{})[id]; const ov=(sw&&im[sw])?sw:null;
+      const fake={id,m:"全機械",u:"共通",item:i.id};
+      const j0=joinRow(fake,im,cm,i.id); const j=ov?joinRow(fake,im,cm,ov):j0;
+      const e=oEdit(id);
+      if(!e&&!((j0.days!==null&&j0.days>=mn)||(j.days!==null&&j.days>=mn))) return;
+      if(ov){ j.swapped=true; j.origName=j0.name; }
+      j.common=true; applyEdit(j,e);
+      const bd=commonBase(i.k==="電気品",mech,ele); j.dk=bd.dk; j.src="共通";
+      out.push(finishRow(j,bd,e,td));
+    });
+  }
+  (S.order.extra||[]).forEach(x=>{ // 今回追加した品目
+    const isE=x.k==="電気品"; const mo=isE?(S.order.emach||{})[x.m]:S.order.machines[x.m]; if(!mo||!mo.on) return;
+    const c=cm[x.c]||{}, days=num(x.days), lead=days===null?null:days+(+S.settings.buf||0);
+    const dk=isE?"pn":(x.dk||"a1"); const bd=isE?{n:mo.pn?dnum(mo.pn):null,fb:false}:baseDate(mo,dk);
+    const j={id:x.id,m:x.m,u:x.u||"",itemId:null,k:x.k,c:x.c,name:x.name,model:"",days,lead,judge:judge(days),who:c.who||"要確認",info:c.info||"要確認",note:x.note||"",uname:S.unitName[x.m+"|"+(x.u||"")]||"",extra:true,dk,src:"今回",edits:[]};
+    out.push(finishRow(j,bd,x.dl?{dl:x.dl}:null,td)); j.edits=[];
+  });
+  return out;
+}
+
+
+// ---- 受注時リスト：今回の追加・編集
+function catsForK(k){
+  const byK={}; items().forEach(i=>{(byK[i.c]=byK[i.c]||{})[i.k]=((byK[i.c]||{})[i.k]||0)+1;});
+  const col=new Intl.Collator("ja",{numeric:true}); const all=cats().filter(c=>c.c!=="その他");
+  const mine=all.filter(c=>catKind(c,byK)===k).map(c=>c.c).sort((a,b)=>col.compare(a,b));
+  const other=all.map(c=>c.c).filter(c=>!mine.includes(c)).sort((a,b)=>col.compare(a,b));
+  return {mine:mine.concat(["その他"]),other};
+}
+function renderOAdd(){
+  const k=$("#oa-k").value, isE=k==="電気品";
+  const on=isE?emachines().filter(m=>((S.order.emach||{})[m]||{}).on):machines().filter(m=>(S.order.machines[m]||{}).on);
+  const cur=$("#oa-m").value;
+  $("#oa-m").innerHTML=on.length?on.map(m=>`<option value="${esc(m)}" ${m===cur?"selected":""}>${isE?"電気 ":""}${esc(m)}</option>`).join(""):`<option value="">${isE?"先に左で電気品の機械を選んでください":"先に左で機械を選んでください"}</option>`;
+  const cc=$("#oa-c").value, cs=catsForK(k);
+  $("#oa-c").innerHTML=`<optgroup label="${esc(k)}の分類">`+cs.mine.map(c=>`<option ${c===cc?"selected":""}>${esc(c)}</option>`).join("")+`</optgroup><optgroup label="ほかの分類">`+cs.other.map(c=>`<option ${c===cc?"selected":""}>${esc(c)}</option>`).join("")+`</optgroup>`;
+  if(isE&&!$("#oa-u").value) $("#oa-u").placeholder="ユニット（例：EE）"; else $("#oa-u").placeholder="ユニット（例：PR）";
+  $("#oa-dk").disabled=isE; $("#oa-dk").title=isE?"電気品は盤組開始日で計算します":"";
+  const col=new Intl.Collator("ja",{numeric:true});
+  $("#oa-list").innerHTML=items().filter(i=>i.k===k).sort((a,b)=>col.compare(a.name||"",b.name||"")).map(i=>`<option value="${esc(i.name)}">${esc(i.c)}・${i.lead??"－"}日</option>`).join("");
+  const n=(S.order.extra||[]).length+Object.keys(S.order.edit||{}).length; $("#oa-cnt").textContent=n?"（"+n+"件）":"";
+}
+$("#oa-k").addEventListener("change",()=>{$("#oa-c").value=""; renderOAdd();});
+$("#oa-name").addEventListener("change",()=>{ const k=$("#oa-k").value, nm=$("#oa-name").value.trim();
+  const it=items().find(i=>i.k===k&&i.name===nm); if(!it) return;
+  if([...$("#oa-c").options].some(o=>o.value===it.c)) $("#oa-c").value=it.c;
+  if(it.lead!==null&&it.lead!==undefined) $("#oa-days").value=it.lead;
+  toast("マスタの「"+it.name+"」の分類と最新納期を入れました"); });
+$("#oa-btn").addEventListener("click",()=>{
+  const k=$("#oa-k").value, isE=k==="電気品", m=$("#oa-m").value, u=$("#oa-u").value.trim().toUpperCase(), c=$("#oa-c").value, name=$("#oa-name").value.trim();
+  const days=num($("#oa-days").value), dk=isE?"pn":$("#oa-dk").value, dl=$("#oa-dl").value, note=$("#oa-note").value.trim(), master=$("#oa-master").checked;
+  if(!m){toast(isE?"先に左で電気品の機械にチェックを入れてください":"先に左で機械にチェックを入れてください");return;}
+  if(!name){toast("品名を入力してください");$("#oa-name").focus();return;}
+  if(days===null&&!dl){toast("最新納期（日）か手配期限のどちらかを入れてください");$("#oa-days").focus();return;}
+  if(master){
+    if(days===null){toast("マスタに登録するときは最新納期（日）を入れてください");$("#oa-days").focus();return;}
+    let it=items().find(i=>i.k===k&&i.name===name), created=false;
+    if(!it){ const nid="N"+Date.now(); S.itemAdd.push({id:nid,grp:k+"|"+name,k,c,name,model:"",maker:"",size:"",sup:"",n:0,med:null,max:null,lead:days,conf:todayIso(),src:"登録",note:""}); it={id:nid,lead:days}; created=true; }
+    const rid="x"+(Date.now()+1); S.rowAdd.push({id:rid,m,u,item:it.id,n:1}); if(note) S.rowNote[rid]=note;
+    if(!isE&&dk!=="a1") S.rowDate[rid]=dk;
+    S.order.keep=S.order.keep||{}; S.order.keep[rid]=true;
+    const ed={}; if(!created&&days!==num(it.lead)) ed.days=days; if(dl) ed.dl=dl;
+    if(Object.keys(ed).length){ S.order.edit=S.order.edit||{}; S.order.edit[rid]=ed; }
+    toast((created?"「"+name+"」を長納期品マスタに登録し、":"マスタの「"+name+"」を")+(isE?"電気 ":"")+m+" に追加しました");
+  } else {
+    S.order.extra=S.order.extra||[]; S.order.extra.push({id:"ox"+Date.now(),k,m,u,c,name,days,dk,dl,note});
+    toast("「"+name+"」を今回のリストに追加しました（マスタは変わりません）");
+  }
+  ["#oa-name","#oa-days","#oa-dl","#oa-note"].forEach(s=>$(s).value=""); $("#oa-master").checked=false;
+  save(); renderMachines(); renderOrder(); if(master) renderItems();
+});
+$("#oa-clear").addEventListener("click",()=>{ const nx=(S.order.extra||[]).length, ne=Object.keys(S.order.edit||{}).length;
+  if(!nx&&!ne){toast("今回の追加・編集はありません");return;}
+  if(!confirm("今回のリストで追加した品目（"+nx+"件）と編集した内容（"+ne+"件）を元に戻しますか？\n（長納期品マスタに登録した品目は、マスタに残ります）")) return;
+  S.order.extra=[]; S.order.edit={}; S.order.keep={}; save(); renderMachines(); renderOrder(); toast("元に戻しました"); });
+let EDROW=null;
+function openOEdit(id){
+  const r=orderRows().find(x=>x.id===id); if(!r) return; EDROW=r;
+  $("#oe-info").textContent=(r.common?"全機械・共通":r.m+" "+(r.u||""))+"　"+kshort(r.k)+"・"+r.c+(r.extra?"（今回追加した品目）":"（長納期品マスタは変わりません）");
+  $("#oe-name").value=r.name||""; $("#oe-u").value=r.u||""; $("#oe-urow").hidden=!!r.common;
+  $("#oe-days").value=r.days??""; $("#oe-note").value=r.note||"";
+  $("#oe-mrow").hidden=!!r.extra||!r.itemId; $("#oe-master").checked=false;
+  $("#oe-dl").value=r.fixDl?isoOf(r.dl):"";
+  $("#oe-dlnote").textContent="空欄なら、基準日と最新納期から計算します"+(r.dlCalc!==null&&r.dlCalc!==undefined?"（現在の計算："+dstr(r.dlCalc)+"）":"");
+  $("#oe-reset").hidden=!!r.extra||!oEdit(r.id);
+  $("#oedlg").showModal(); $("#oe-name").focus();
+}
+$("#oe-cancel").addEventListener("click",()=>$("#oedlg").close());
+$("#oe-reset").addEventListener("click",()=>{ const r=EDROW; if(!r) return; delete (S.order.edit||{})[r.id]; $("#oedlg").close(); save(); renderOrder(); toast("この行の変更を元に戻しました"); });
+$("#oe-ok").addEventListener("click",()=>{
+  const r=EDROW; if(!r) return;
+  const name=$("#oe-name").value.trim(), u=$("#oe-u").value.trim().toUpperCase(), dv=num($("#oe-days").value), note=$("#oe-note").value.trim(), dl=$("#oe-dl").value;
+  if(r.extra){
+    const x=(S.order.extra||[]).find(v=>v.id===r.id); if(!x) return;
+    if(!name){toast("品名を入力してください");return;}
+    if(dv===null&&!dl){toast("最新納期（日）か手配期限のどちらかを入れてください");return;}
+    Object.assign(x,{name,u,days:dv,note,dl}); $("#oedlg").close(); save(); renderOrder(); toast("「"+name+"」を変更しました"); return;
+  }
+  const e=Object.assign({},oEdit(r.id)||{}); let msg="この行を変更しました（今回のリストだけ）";
+  if(name&&name!==r.bName) e.name=name; else delete e.name;
+  if(!r.common){ if(u!==r.bU) e.u=u; else delete e.u; }
+  if($("#oe-master").checked&&r.itemId&&dv!==null&&dv!==r.bDays){
+    const add=S.itemAdd.find(x=>x.id===r.itemId); const tgt=add||(S.itemEdit[r.itemId]=S.itemEdit[r.itemId]||{}); tgt.lead=dv; tgt.conf=todayIso();
+    delete e.days; msg="長納期品マスタの最新納期を "+dv+" 日にしました（使っているすべての機械に反映）";
+  } else if(dv===null||dv===r.bDays) delete e.days; else e.days=dv;
+  if(note!==r.bNote) e.note=note; else delete e.note;
+  if(dl&&dnum(dl)!==r.dlCalc) e.dl=dl; else delete e.dl;
+  S.order.edit=S.order.edit||{};
+  if(Object.keys(e).length) S.order.edit[r.id]=e; else delete S.order.edit[r.id];
+  $("#oedlg").close(); save(); renderMachines(); renderOrder(); if(msg.startsWith("長納期")) renderItems(); toast(msg);
+});
+
+// ---- tabs
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id===b.dataset.v));
+  render();
+}));
+
+// ---- order view
+function renderMachines(){
+  $("#o-no").value=S.order.no; $("#o-date").value=S.order.date;
+  $("#o-min").value=S.order.min??""; $("#o-min").placeholder=S.settings.warn;
+  const im=itemMap(), mn=minDays();
+  $("#mrows").innerHTML=machines().map(m=>{
+    const mo=S.order.machines[m]||{};
+    const cnt=mrows().filter(r=>r.m===m&&!rowE(r)&&!S.rowOff[r.id]&&rowAlive(r)&&(num((im[rItem(r)]||{}).lead)??-1)>=mn).length;
+    const d=mdates(mo);
+    return `<div class="mrow ${mo.on?"sel":""}"><label class="chk"><input type="checkbox" data-m="${esc(m)}" class="m-on" ${mo.on?"checked":""}><span class="code">${esc(m)}</span></label>
+    <span class="small">${cnt}件</span><span></span></div>`+(mo.on?`<div class="mdates">${DK.filter(([k])=>k!=="pn").map(([k,l])=>`<label><span>${l}${k==="a1"?"開始日":(k==="a2"?"開始日":"開始日")}</span><input type="date" class="m-date" data-m="${esc(m)}" data-dk="${k}" value="${esc(d[k])}" aria-label="${esc(m)}の${l}開始日"></label>`).join("")}</div>`:"");}).join("");
+  const em=S.order.emach||{};
+  $("#erows").innerHTML=emachines().map(m=>{ const mo=em[m]||{};
+    const cnt=mrows().filter(r=>r.m===m&&rowE(r)&&!S.rowOff[r.id]&&rowAlive(r)&&(num((im[rItem(r)]||{}).lead)??-1)>=mn).length;
+    return `<div class="mrow ${mo.on?"sel":""}"><label class="chk"><input type="checkbox" data-e="${esc(m)}" class="e-on" ${mo.on?"checked":""}><span class="code">${esc(m)}</span></label><span class="small">${cnt}件</span><span></span></div>`+
+      (mo.on?`<div class="mdates"><label><span>盤組開始日</span><input type="date" class="e-date" data-e="${esc(m)}" value="${esc(mo.pn||"")}" aria-label="${esc(m)}の盤組開始日"></label></div>`:"");}).join("");
+  renderOAdd();
+}
+function oNameCell(r){
+  let h=(r.extra||r.nameEdit)?esc(r.name):nameSel(r);
+  if(r.extra) h+=`<span class="extra">今回追加</span>`;
+  else if((S.order.keep||{})[r.id]) h+=`<span class="extra">今回マスタ登録</span>`;
+  else if(r.edits&&r.edits.length) h+=`<div class="small"><span class="extra" style="margin:0">今回編集：${esc(r.edits.join("・"))}</span></div>`;
+  if(r.nameEdit) h+=`<div class="small">元の品名：${esc(r.origName)}</div>`;
+  if(r.origU!==undefined) h+=`<div class="small">元のユニット：${esc(r.origU||"－")}</div>`;
+  return h;
+}
+function marginCell(v){
+  if(v===null) return `<span class="small">日付未入力</span>`;
+  const cls=v<0?"l":(v<=30?"s":""); const w=Math.min(60,Math.abs(v)/4);
+  return `<span class="mg ${cls}"><i style="width:${w}px"></i><b>${v}</b></span>`;
+}
+let OF={}, toastless=false;
+function renderOrder(){
+  let rows=orderRows(); const allRows=rows; { const n=(S.order.extra||[]).length+Object.keys(S.order.edit||{}).length; $("#oa-cnt").textContent=n?"（"+n+"件）":""; } const dn=Object.keys(S.order.del||{}).length; $("#odelcnt").textContent=dn?"（"+dn+"件）":"";
+  const late=rows.filter(r=>r.margin!==null&&r.margin<0).length;
+  const dls=rows.map(r=>r.dl).filter(x=>x!==null);
+  $("#kpi").innerHTML=`<div><b>${rows.length}</b><span>対象件数</span></div><div class="${late?"bad":""}"><b>${late}</b><span>今日時点で遅れ</span></div><div><b>${dls.length?dstr(Math.min(...dls)):"－"}</b><span>最も早い手配期限</span></div><div><b>${dstr(today())}</b><span>今日</span></div>`;
+  if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#ofilt")&&document.activeElement.dataset.fk==="q"){} else $("#ofilt").innerHTML=allRows.length?filterBar("o",allRows,OF):"";
+  rows=applyF(rows,OF);
+  if($("#t-urgent").checked) rows=rows.filter(r=>r.margin!==null&&r.margin<=30);
+  $("#ofilt").dataset.n=rows.length;
+  if($("#t-sort").checked) rows.sort((a,b)=>(a.dl??1e9)-(b.dl??1e9));
+  if(!machines().some(m=>(S.order.machines[m]||{}).on)&&!emachines().some(m=>((S.order.emach||{})[m]||{}).on)){ $("#olist").innerHTML=`<tr><td class="empty">左の一覧で対象の機械にチェックを入れ、組立開始日を入力すると、ここに長納期品が並びます。</td></tr>`; return; }
+  if(!rows.length){ $("#olist").innerHTML=`<tr><td class="empty">${fActive(OF)?"絞り込みの条件に合う品目はありません。「絞り込みを解除」を押してください。":"条件に合う長納期品はありません。「載せる最低日数」を下げると表示が増えます。"}</td></tr>`; return; }
+  if(fActive(OF)) toastless=true;
+  $("#olist").innerHTML=(fActive(OF)?`<caption class="small" style="caption-side:top;text-align:left;padding:4px 0">絞り込み中：${rows.length}件を表示（全${allRows.length}件）</caption>`:"")+`<thead><tr><th>機械</th><th>ユニット</th><th>ユニット名称</th><th>区分</th><th>分類</th><th>品名</th><th>基準日</th><th>手配期限</th><th class="num wrap" style="min-width:76px">手配リード目安(日)</th><th class="num wrap" style="min-width:112px">今日から手配期限までの余裕(日)</th><th class="num wrap">最新納期(日)</th><th>判定</th><th>決める人</th><th>発注に最低限必要な情報</th><th>備考</th><th></th></tr></thead><tbody>`+
+  rows.map(r=>`<tr class="${r.margin!==null&&r.margin<0?"late":(r.margin!==null&&r.margin<=30?"soon":"")}"><td class="nw"><b>${esc(r.m)}</b>${r.common?`<div class="small">共通</div>`:""}</td><td class="nw">${r.common?"－":esc(r.u)}</td><td class="nw">${esc(r.uname)}</td><td class="nw">${esc(kshort(r.k))}</td><td class="nw">${esc(r.c)}</td><td class="wide">${oNameCell(r)}</td>
+  <td class="nw">${r.common?`<span class="small"><b>${DKL[r.dk]}</b><br>（選んだ機械で最も早い日）</span>${r.fb?`<div class="fbn">${r.dk==="a1"?"盤組がないため組立①で計算":"組立①がないため盤組で計算"}</div>`:""}`:dkSel(`data-odk="${r.id}"`,r.dk,"基準日（組立①か②）",isEE(r.u,r.k))+(r.fb?`<div class="fbn">組立①で計算</div>`:"")}</td>
+  <td class="deadline">${dstr(r.dl)||`<span class="small">－</span>`}${r.fixDl?`<div class="small" style="font-weight:400">直接指定${r.dlCalc!==null&&!r.extra?"（計算 "+dstr(r.dlCalc)+"）":""}</div>`:""}</td><td class="num">${r.lead??"－"}</td><td class="num">${marginCell(r.margin)}</td>
+  <td class="num nw">${r.origDays!==undefined?`<span class="ochg">${r.days}</span><div class="small">元 ${r.origDays??"－"}</div>`:(r.days??"－")}</td><td>${tag(r.judge)}</td><td class="nw">${esc(r.who)}</td><td class="small info">${esc(r.info)}</td><td class="small wide">${esc(r.note)}</td><td class="nw"><div class="obtns"><button class="btn" data-oedit="${r.id}">編集</button><button class="btn dangerbtn" data-odel="${r.id}">削除</button></div></td></tr>`).join("")+"</tbody>";
+}
+$("#o-no").addEventListener("input",e=>{S.order.no=e.target.value;save();});
+$("#o-date").addEventListener("change",e=>{S.order.date=e.target.value;save();renderOrder();});
+$("#o-min").addEventListener("input",e=>{S.order.min=e.target.value===""?null:e.target.value;save();renderMachines();renderOrder();});
+$("#mrows").addEventListener("change",e=>{
+  const m=e.target.dataset.m; if(!m) return; S.order.machines[m]=S.order.machines[m]||{};
+  if(e.target.classList.contains("m-on")) S.order.machines[m].on=e.target.checked;
+  if(e.target.classList.contains("m-date")){ const k=e.target.dataset.dk; if(k==="a1") S.order.machines[m].date=e.target.value; else S.order.machines[m][k]=e.target.value; }
+  save(); renderMachines(); renderOrder();
+});
+$("#erows").addEventListener("change",e=>{ const m=e.target.dataset.e; if(!m) return; S.order.emach=S.order.emach||{}; S.order.emach[m]=S.order.emach[m]||{};
+  if(e.target.classList.contains("e-on")) S.order.emach[m].on=e.target.checked;
+  if(e.target.classList.contains("e-date")) S.order.emach[m].pn=e.target.value;
+  save(); renderMachines(); renderOrder(); });
+$("#new-e-btn").addEventListener("click",()=>{const v=$("#new-e").value.trim().toUpperCase(); if(!v)return; S.emachinesAdd=S.emachinesAdd||[]; if(!emachines().includes(v)) S.emachinesAdd.push(v); $("#new-e").value=""; save(); render(); toast("電気の "+v+" を追加しました。長納期品マスタで電気品に使う機械として追加してください");});
+$("#bulk-btn").addEventListener("click",()=>{const d=$("#bulk-date").value; if(!d){toast("一括入力する日付を選んでください");return;}
+  const bk=$("#bulk-dk").value; let n=0;
+  if(bk==="pn"){ Object.keys(S.order.emach||{}).forEach(m=>{ if(S.order.emach[m].on){ S.order.emach[m].pn=d; n++; } }); if(!n){toast("先に電気品の機械にチェックを入れてください");return;} }
+  else Object.keys(S.order.machines).forEach(m=>{if(S.order.machines[m].on){ if(bk==="a1") S.order.machines[m].date=d; else S.order.machines[m][bk]=d; n++;}});
+  if(!n){toast("先に機械にチェックを入れてください");return;} save();renderMachines();renderOrder();toast(n+"台に入力しました");});
+$("#new-m-btn").addEventListener("click",()=>{const v=$("#new-m").value.trim().toUpperCase(); if(!v)return; if(!machines().includes(v)) S.machinesAdd.push(v); $("#new-m").value=""; save(); render(); toast(v+" を追加しました。長納期品マスタで機械を選び、長納期品を追加してください");});
+let DELROW=null;
+$("#olist").addEventListener("click",e=>{const eb=e.target.closest("[data-oedit]"); if(eb){ openOEdit(eb.dataset.oedit); return; }
+  const b=e.target.closest("[data-odel]"); if(!b) return; const id=b.dataset.odel;
+  if(id.startsWith("ox")){ const x=(S.order.extra||[]).find(v=>v.id===id); if(!x||!confirm("今回追加した「"+x.name+"」をリストから削除しますか？")) return;
+    S.order.extra=S.order.extra.filter(v=>v.id!==id); save(); renderOrder(); toast("削除しました"); return; }
+  const r=orderRows().find(x=>x.id===id); if(!r) return; DELROW=r;
+  const us=[...((usage()[r.itemId])||[])].sort();
+  $("#deldlg-msg").textContent=r.m+" "+r.u+"　"+r.name;
+  $("#deldlg-m").textContent=r.common?"「すべての機械で使う」を解除します。今後は個別に指定した機械でだけ表示されます":r.m+"のリストから外し、今後の受注でも"+r.m+"では表示されません（他の機械は変わりません）";
+  $("#deldlg [data-dch=machine] b").textContent=r.common?"「すべての機械で使う」を解除":"この機械のマスタからも外す";
+  $("#deldlg-i").textContent="品目そのものを削除します。使っている機械（"+(us.join("・")||r.m)+"）すべてで表示されなくなります";
+  $("#deldlg").showModal();});
+$("#deldlg").addEventListener("click",e=>{const b=e.target.closest("[data-dch]"); if(!b) return; const ch=b.dataset.dch; const r=DELROW; $("#deldlg").close(); if(!r||ch==="cancel") return;
+  if(ch==="order"){ S.order.del=S.order.del||{}; S.order.del[r.id]=true; toast("今回のリストから削除しました（「削除を元に戻す」で戻せます）"); }
+  if(ch==="machine"&&r.common){ delete S.itemAll[r.itemId]; save(); render(); toast("「すべての機械で使う」を解除しました"); return; }
+  if(ch==="machine"){ S.rowOff[r.id]=true; toast(r.m+"のマスタから外しました（長納期品マスタで機械を選び「この機械で使わない」のチェックを外すと戻せます）"); }
+  if(ch==="item"){ S.itemDel[r.itemId]=true; toast("長納期品マスタから削除しました（長納期品マスタの「削除した品目を表示」から戻せます）"); }
+  save(); render();});
+$("#odelreset-btn").addEventListener("click",()=>{ const n=Object.keys(S.order.del||{}).length; if(!n){toast("削除した品目はありません");return;}
+  if(!confirm("今回のリストで削除した"+n+"件を元に戻しますか？"))return; S.order.del={}; save(); renderOrder(); toast("元に戻しました");});
+$("#olist").addEventListener("change",e=>{
+  const dkid=e.target.dataset.odk;
+  if(dkid&&dkid.startsWith("ox")){ const x=(S.order.extra||[]).find(v=>v.id===dkid); if(x){ x.dk=e.target.value; save(); renderOrder(); toast("基準日を「"+DKL[x.dk]+"」にしました"); } return; }
+  if(dkid){ S.order.dk=S.order.dk||{}; const r=mrows().find(x=>x.id===dkid); const it=r?itemMap()[rItem(r)]:null;
+    const def=S.rowDate[dkid]||"a1"; if(e.target.value===def) delete S.order.dk[dkid]; else S.order.dk[dkid]=e.target.value; save(); renderOrder(); toast("基準日を「"+DKL[e.target.value]+"」にしました"); return; }
+  const id=e.target.dataset.orid; if(!id) return;
+  S.order.swap=S.order.swap||{}; const r=id.startsWith("all:")?{item:id.slice(4),id}:mrows().find(x=>x.id===id); const base=r?(id.startsWith("all:")?r.item:rItem(r)):null;
+  if(e.target.value===base) delete S.order.swap[id]; else S.order.swap[id]=e.target.value;
+  const ed=(S.order.edit||{})[id]; if(ed){ delete ed.name; delete ed.days; if(!Object.keys(ed).length) delete S.order.edit[id]; }
+  save(); renderOrder(); toast("今回の品目を「"+(itemMap()[e.target.value]||{}).name+"」にしました（マスタは変わりません）");});
+$("#swreset-btn").addEventListener("click",()=>{ if(!confirm("この受注時リストで選び直したサイズ・容量と基準日を、すべて元に戻しますか？")) return; S.order.swap={}; S.order.dk={}; save(); renderOrder(); toast("元に戻しました");});
+$("#ofilt").addEventListener("change",e=>{const k=e.target.dataset.fk; if(!k||k==="q") return; OF[k]=e.target.value; renderOrder();});
+$("#ofilt").addEventListener("input",e=>{if(e.target.dataset.fk!=="q") return; OF.q=e.target.value.trim(); renderOrder();});
+$("#ofilt").addEventListener("click",e=>{if(!e.target.dataset.fclear) return; OF={}; $("#ofilt").innerHTML=""; renderOrder();});
+$("#t-sort").addEventListener("change",renderOrder); $("#t-urgent").addEventListener("change",renderOrder);
+$("#print-btn").addEventListener("click",()=>window.print());
+$("#csv-btn").addEventListener("click",()=>{
+  const rows=orderRows(); if(!rows.length){toast("書き出す行がありません");return;}
+  if($("#t-sort").checked) rows.sort((a,b)=>(a.dl??1e9)-(b.dl??1e9));
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const head=["機械","ユニット","ユニット名称","区分","分類","品名","基準日","手配期限","手配リード目安(日)","今日から手配期限までの余裕(日)","最新納期(日)","判定","決める人","発注に最低限必要な情報","備考","手配日","状況","今回の変更"];
+  const lines=[["工事番号",S.order.no],["受注日",S.order.date],["作成日",dstr(today())],[],head].map(a=>a.map(q).join(","));
+  rows.forEach(r=>lines.push([r.m,r.u,r.uname,r.k,r.c,r.name,DKL[r.dk]+(r.fb?"（組立①で計算）":""),dstr(r.dl),r.lead,r.margin,r.days,r.judge,r.who,r.info,r.note,"","",r.extra?"今回追加":(r.edits||[]).join("・")].map(q).join(",")));
+  download("\uFEFF"+lines.join("\r\n"),(S.order.no||"長納期リスト")+"_"+dstr(today()).replace(/\//g,"")+".csv","text/csv");
+});
+function download(text,name,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+
+// ---- projects
+let PF="open", PFL={};
+function curP(){return S.projects.find(p=>p.id===S.curProject)||null;}
+function showTab(v){document.querySelectorAll("nav button").forEach(x=>x.setAttribute("aria-selected",x.dataset.v===v));document.querySelectorAll(".view").forEach(x=>x.classList.toggle("on",x.id===v));}
+$("#saveproj-btn").addEventListener("click",()=>{
+  const rows=orderRows(); if(!rows.length){toast("保存する長納期品がありません");return;}
+  const no=(S.order.no||"").trim(); if(!no){toast("工事番号を入力してください");$("#o-no").focus();return;}
+  const ex=S.projects.find(p=>p.no===no);
+  if(ex&&!confirm("工事番号「"+no+"」の案件はすでに保存されています。新しい内容で置き換えると、完了の記録や追加した品目は消えます。置き換えますか？")) return;
+  const ms={}; Object.keys(S.order.machines).forEach(m=>{const o=S.order.machines[m]; if(o.on) ms[m]=mdates(o);});
+  const ems={}; Object.keys(S.order.emach||{}).forEach(m=>{const o=S.order.emach[m]; if(o.on) ems[m]={pn:o.pn||""};});
+  const p={id:ex?ex.id:"P"+Date.now(),no,orderDate:S.order.date,created:dstr(today()),machines:ms,emachines:ems,buf:+S.settings.buf||0,
+    items:rows.sort((a,b)=>(a.dl??1e9)-(b.dl??1e9)).map((r,i)=>({iid:"i"+i,itemId:r.itemId||null,m:r.m,u:r.u,uname:r.uname,k:r.k,c:r.c,name:r.name,changed:!!(r.swapped||r.nameEdit),orig:(r.swapped||r.nameEdit)?r.origName:"",nameEdit:!!r.nameEdit,dk:r.dk,common:!!r.common,model:r.model||"",days:r.days,lead:r.lead,dl:r.dl,src:r.src,judge:r.judge,who:r.who,info:r.info,done:false,doneDate:"",note:r.note||"",extra:!!r.extra,removed:false,
+      fixDl:!!r.fixDl,dlEdited:!!(r.fixDl&&!r.extra&&r.dlCalc!==null),dlOrig:r.fixDl?r.dlCalc:null,dlFixOrig:false}))};
+  if(ex) S.projects[S.projects.indexOf(ex)]=p; else S.projects.push(p);
+  S.curProject=p.id; PF="open"; save(); showTab("v-proj"); renderProj();
+  const nx=p.items.filter(i=>i.extra).length, ne=rows.filter(r=>!r.extra&&r.edits&&r.edits.length).length;
+  toast(no+" を案件として保存しました（"+p.items.length+"件"+(nx?"・今回追加 "+nx:"")+(ne?"・今回編集 "+ne:"")+"）");
+});
+function pBase(p,i,dk){ if(i.common){ const bd=commonBase(i.k==="電気品",p.machines||{},p.emachines||{}); return {n:bd.n,fb:bd.fb}; } if(p.emachines&&i.k==="電気品"){ const v=(p.emachines[i.m]||{}).pn; return {n:v?dnum(v):null,fb:false}; } return baseDate(p.machines[i.m],dk); }
+function projNameCell(i){
+  if(i.extra||i.nameEdit||!i.itemId||i.removed) return esc(i.name);
+  const col=new Intl.Collator("ja",{numeric:true}); const opts=items().filter(x=>x.c===i.c).sort((a,b)=>col.compare(a.name||"",b.name||""));
+  if(opts.length<2) return esc(i.name);
+  if(!opts.some(x=>x.id===i.itemId)) opts.unshift({id:i.itemId,name:i.name,lead:i.days});
+  return `<select data-iid="${i.iid}" data-f="swap" aria-label="品目（サイズ・容量）を変更" style="min-width:200px">${opts.map(x=>`<option value="${x.id}" ${x.id===i.itemId?"selected":""}>${esc(x.name)}（${x.lead??"－"}日）</option>`).join("")}</select>`;
+}
+function pstats(p){const it=p.items.filter(i=>!i.removed),td=today();const open=it.filter(i=>!i.done);
+  return {all:it.length,done:it.length-open.length,open:open.length,late:open.filter(i=>i.dl!==null&&i.dl<td).length,
+    next:open.map(i=>i.dl).filter(x=>x!==null).reduce((a,b)=>Math.min(a,b),Infinity),removed:p.items.length-it.length};}
+function dueItems(){
+  const td=today(), out=[];
+  S.projects.forEach(p=>p.items.forEach(i=>{ if(i.removed||i.done||i.dl===null) return; const mg=i.dl-td; if(mg<=14) out.push(Object.assign({},i,{pno:p.no,pid:p.id,mg})); }));
+  return out.sort((a,b)=>a.mg-b.mg);
+}
+function itemLine(i){return `${i.pno}　${i.m} ${i.u}　${i.name}（期限 ${dstr(i.dl)}・${i.mg<0?(-i.mg)+"日遅れ":"あと"+i.mg+"日"}）`;}
+function renderNotice(){
+  const d=dueItems(); const late=d.filter(i=>i.mg<0), w1=d.filter(i=>i.mg>=0&&i.mg<=7), w2=d.filter(i=>i.mg>7);
+  $("#nbadge").innerHTML=d.length?`<span class="nb" aria-label="お知らせ ${d.length}件">${d.length}</span>`:"";
+  if(!S.projects.length){$("#notice").innerHTML="";return;}
+  if(!d.length){$("#notice").innerHTML=`<div class="notice"><h3>手配期限のお知らせ</h3><span class="small">2週間以内に手配期限を迎える未手配の品目はありません。</span>
+    <div class="tools" style="margin:8px 0 0"><button class="btn" id="n-ics">全案件をOutlookの予定に入れる</button></div></div>`;return;}
+  const li=a=>a.slice(0,30).map(i=>`<li>${esc(itemLine(i))}</li>`).join("")+(a.length>30?`<li>ほか${a.length-30}件</li>`:"");
+  $("#notice").innerHTML=`<div class="notice ${late.length?"bad":""}"><h3>手配期限のお知らせ（${dstr(today())}時点）</h3>
+  ${late.length?`<b style="color:var(--danger)">期限切れ ${late.length}件</b><ul>${li(late)}</ul>`:""}
+  ${w1.length?`<b>1週間以内 ${w1.length}件</b><ul>${li(w1)}</ul>`:""}
+  ${w2.length?`<b>2週間以内 ${w2.length}件</b><ul>${li(w2)}</ul>`:""}
+  <div class="tools" style="margin:0"><button class="btn pri" id="n-mail">お知らせメールを作成</button><button class="btn" id="n-ics">全案件をOutlookの予定に入れる</button></div></div>`;
+}
+$("#notice").addEventListener("click",e=>{
+  if(e.target.id==="n-ics"){makeIcs(S.projects);return;}
+  if(e.target.id==="n-mail"){
+    const d=dueItems(); if(!d.length)return;
+    const sec=(t,a)=>a.length?[`■${t}（${a.length}件）`].concat(a.slice(0,25).map(i=>"・"+itemLine(i))).concat(a.length>25?[`・ほか${a.length-25}件`]:[]).concat([""]):[];
+    const body=[`長納期品の手配期限のお知らせ（${dstr(today())}時点）`,""].concat(sec("期限切れ",d.filter(i=>i.mg<0)),sec("1週間以内",d.filter(i=>i.mg>=0&&i.mg<=7)),sec("2週間以内",d.filter(i=>i.mg>7)),["詳細は長納期品 手配期限ツールの案件管理で確認してください。"]).join("\r\n");
+    const subj=`【手配期限】2週間以内 ${d.length}件（${dstr(today())}）`;
+    if(!S.settings.mail) toast("宛先は「設定・データ」で登録できます");
+    location.href="mailto:"+encodeURIComponent(S.settings.mail||"")+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);
+  }
+});
+function icsEsc(t){return String(t).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");}
+function fold(line){const enc=new TextEncoder();const out=[];let cur="",len=0;
+  for(const ch of line){const b=enc.encode(ch).length; if(len+b>73){out.push(cur);cur=" "+ch;len=1+b;} else {cur+=ch;len+=b;}}
+  out.push(cur); return out.join("\r\n");}
+function ymd(n){return dstr(n).replace(/\//g,"");}
+function makeIcs(projects){
+  const td=today(), now=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+Z$/,"Z"); const groups={};
+  projects.forEach(p=>p.items.forEach(i=>{ if(i.removed||i.done||i.dl===null) return;
+    [[14,"2週間前"],[7,"1週間前"]].forEach(([off,lab])=>{const d=i.dl-off; if(d<td) return; const k=p.id+"|"+d+"|"+off;
+      (groups[k]=groups[k]||{p,d,off,lab,items:[]}).items.push(i);});}));
+  const keys=Object.keys(groups); if(!keys.length){toast("今日以降にお知らせする未手配の品目がありません");return;}
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//longlead-tool//JP","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+  keys.forEach(k=>{const g=groups[k];
+    const sum=`【手配期限${g.lab}】${g.p.no} ${g.items.length}件`;
+    const desc=[`工事番号 ${g.p.no}：手配期限の${g.lab}です。`,""].concat(g.items.map(i=>`・${i.m} ${i.u} ${i.name}（手配期限 ${dstr(i.dl)}／決める人：${i.who}）`)).join("\n");
+    L.push("BEGIN:VEVENT","UID:longlead-"+g.p.id+"-"+ymd(g.d)+"-"+g.off+"@longlead","DTSTAMP:"+now,"DTSTART;VALUE=DATE:"+ymd(g.d),"DTEND;VALUE=DATE:"+ymd(g.d+1),
+      fold("SUMMARY:"+icsEsc(sum)),fold("DESCRIPTION:"+icsEsc(desc)),"TRANSP:TRANSPARENT",
+      "BEGIN:VALARM","ACTION:DISPLAY",fold("DESCRIPTION:"+icsEsc(sum)),"TRIGGER:PT9H","END:VALARM","END:VEVENT");});
+  L.push("END:VCALENDAR");
+  download(L.join("\r\n")+"\r\n",(projects.length===1?projects[0].no:"全案件")+"_手配期限お知らせ.ics","text/calendar");
+  toast(keys.length+"件の予定を書き出しました。開くとOutlookに取り込めます");
+}
+function renderProj(){
+  renderNotice();
+  const ps=[...S.projects].sort((a,b)=>b.id.localeCompare(a.id));
+  $("#plist").innerHTML=ps.length?ps.map(p=>{const st=pstats(p);return `<button data-pid="${p.id}" aria-current="${p.id===S.curProject}"><b>${esc(p.no)}</b><span class="small">未手配 ${st.open}／全${st.all}件</span>${st.late?` <span class="bad">遅れ ${st.late}</span>`:""}</button>`;}).join(""):`<p class="small">まだ案件はありません。</p>`;
+  const p=curP();
+  if(!p){$("#pdetail").innerHTML=`<div class="panel empty">左の一覧から案件を選んでください。受注時リストで「案件として保存」すると、ここで手配状況を管理できます。</div>`;return;}
+  const st=pstats(p), td=today(), cm=catMap();
+  const segItems=p.items.filter(i=>PF==="removed"?i.removed:(!i.removed&&(PF==="all"||(PF==="open"?!i.done:i.done))));
+  let items=applyF(segItems,PFL);
+  items.sort((a,b)=>(a.dl??1e9)-(b.dl??1e9));
+  const ms=Object.keys(p.machines);
+  $("#pdetail").innerHTML=`
+  <div class="panel" style="margin-bottom:12px">
+    <div class="phead">
+      <div class="field"><label for="p-no">工事番号</label><input type="text" id="p-no" value="${esc(p.no)}"></div>
+      <div class="small">受注日 ${esc(p.orderDate?dstr(dnum(p.orderDate)):"－")}　保存日 ${esc(p.created)}　余裕日数 ${p.buf}日</div>
+    </div>
+    <div class="small">${p.emachines?"機械は組立①・組立②、電気品は盤組の開始日":"組立①・組立②・盤組の開始日"}（変えると手配期限が計算し直されます。空欄の組立②は組立①で計算）</div>
+    <div class="pmx">${ms.map(m=>{const d=mdates(p.machines[m]);return `<div class="pmrow"><b>${esc(m)}</b>${DK.filter(([k])=>!p.emachines||k!=="pn").map(([k,l])=>`<label>${l}<input type="date" data-pm="${esc(m)}" data-dk="${k}" value="${esc(d[k])}"></label>`).join("")}</div>`;}).join("")}
+    ${p.emachines&&Object.keys(p.emachines).length?`<div class="small" style="margin-top:4px">電気品</div>`+Object.keys(p.emachines).sort().map(m=>`<div class="pmrow"><b>${esc(m)}</b><label>盤組<input type="date" data-pe="${esc(m)}" value="${esc(p.emachines[m].pn||"")}"></label></div>`).join(""):""}</div>
+  </div>
+  <div class="kpi"><div><b>${st.open}</b><span>未手配</span></div><div class="${st.late?"bad":""}"><b>${st.late}</b><span>未手配のうち遅れ</span></div><div><b>${st.next===Infinity?"－":dstr(st.next)}</b><span>次の手配期限</span></div><div><b>${st.done}／${st.all}</b><span>完了</span></div></div>
+  <div class="tools">
+    <span class="seg" role="group" aria-label="表示する品目">${[["open","未手配"],["done","完了"],["all","すべて"],["removed","今回不要（"+st.removed+"）"]].map(([k,l])=>`<button data-pf="${k}" aria-pressed="${PF===k}">${l}</button>`).join("")}</span>
+    <span class="sp"></span>
+    <button class="btn" id="p-ics">この案件をOutlookの予定に入れる</button>
+    <button class="btn" id="p-csv">Excel用に書き出す（CSV）</button>
+    <button class="btn dangerbtn" id="p-del">この案件を削除</button>
+  </div>
+  <div class="filters" id="pfilt">${segItems.length?filterBar("p",segItems,PFL):""}</div>
+  ${fActive(PFL)?`<div class="small" style="margin:-4px 0 6px">絞り込み中：${items.length}件を表示（全${segItems.length}件）</div>`:""}
+  <div class="tw"><table id="ptable">${items.length?`<thead><tr><th>完了</th><th>手配日</th><th>機械／ユニット</th><th>品名</th><th>基準日</th><th>手配期限</th><th>備考</th><th></th><th class="num rgt">余裕(日)</th><th class="num rgt">手配リード(日)</th><th class="rgt">決める人</th><th class="rgt">発注に最低限必要な情報</th></tr></thead><tbody>`+
+  items.map(i=>{const mg=i.dl===null?null:i.dl-td;const cls=i.removed?"off":(i.done?"done":(mg!==null&&mg<0?"late":(mg!==null&&mg<=30?"soon":"")));
+    return `<tr class="${cls}"><td>${i.removed?"":`<input type="checkbox" data-iid="${i.iid}" data-f="done" ${i.done?"checked":""} aria-label="手配完了">`}</td>
+    <td>${i.done?`<input type="date" data-iid="${i.iid}" data-f="doneDate" value="${esc(i.doneDate)}" aria-label="手配日" style="width:130px">`:""}</td>
+    <td class="nw"><b>${esc(i.m)}</b> ${esc(i.u)}${i.uname?`<div class="small">${esc(i.uname)}</div>`:""}</td>
+    <td class="nm" style="min-width:200px">${projNameCell(i)}${i.extra?`<span class="extra">今回追加</span>`:""}${i.changed&&i.orig?`<div class="small"><span class="extra" style="margin:0">変更（元：${esc(i.orig)}）</span></div>`:""}<div class="small">${esc(kshort(i.k))}・${esc(i.c)}</div></td>
+    <td class="nw">${i.common&&!i.fixDl?`<span class="small"><b>${DKL[i.dk]||""}</b><br>（最も早い日）</span>`:i.fixDl?`<span class="small">期限指定</span>`:dkSel(`data-iid="${i.iid}" data-f="dk"`,i.dk||defDk(i.k,i.u),"基準日（組立①か②）",isEE(i.u,i.k))}${(!i.fixDl&&pBase(p,i,i.dk||defDk(i.k,i.u)).fb)?`<div class="fbn">組立①で計算</div>`:""}</td>
+    <td class="deadline">${(i.done||i.removed)?dstr(i.dl):`<input type="date" data-iid="${i.iid}" data-f="dl" value="${i.dl===null?"":new Date(i.dl*DAY).toISOString().slice(0,10)}" aria-label="手配期限" style="width:140px;${mg!==null&&mg<0?"border-left-color:var(--danger)":""}">`}${i.dlEdited?`<div class="small"><span class="extra" style="margin:0">期限変更（元：${dstr(i.dlOrig)}）</span> <button class="btn" data-dlreset="${i.iid}" style="padding:0 6px;font-size:11px">戻す</button></div>`:""}${i.done?`<div class="donemark">完了</div>`:(mg===null?`<div class="small">日付未入力</div>`:(mg<0?`<div class="small" style="color:var(--danger);font-weight:700">${-mg}日遅れ</div>`:`<div class="small">あと${mg}日</div>`))}</td>
+    <td><input type="text" data-iid="${i.iid}" data-f="note" value="${esc(i.note)}" aria-label="備考" style="min-width:140px"></td>
+    <td class="nw">${i.removed?`<button class="btn" data-restore="${i.iid}">元に戻す</button>`:`<button class="btn dangerbtn" data-remove="${i.iid}">今回不要</button>`}</td>
+    <td class="num rgt">${i.done||mg===null?"":mg}</td><td class="num rgt">${i.lead??(i.fixDl?"指定":"")}</td><td class="nw rgt">${esc(i.who)}</td><td class="small info rgt">${esc(i.info)}</td></tr>`;}).join("")+"</tbody>"
+    :`<tr><td class="empty">${fActive(PFL)?"絞り込みの条件に合う品目はありません。「絞り込みを解除」を押してください。":""}${fActive(PFL)?"":PF==="open"?"未手配の品目はありません。":(PF==="removed"?"今回不要にした品目はありません。":"表示する品目がありません。")}</td></tr>`}</table></div>
+  <div class="panel" style="margin-top:16px">
+    <h3>この案件だけに品目を追加</h3>
+    <p class="small">マスタは変わりません。調達日数を入れると組立開始日から手配期限を計算します。期限が決まっている場合は手配期限を直接入れてください。</p>
+    <div class="addform">
+      <select id="pa-m" aria-label="機械">${ms.map(m=>`<option>${esc(m)}</option>`).join("")}${p.emachines?Object.keys(p.emachines).filter(m=>!ms.includes(m)).map(m=>`<option>${esc(m)}</option>`).join(""):""}</select>
+      <input type="text" id="pa-u" placeholder="ユニット" aria-label="ユニット">
+      <select id="pa-k" aria-label="区分"><option>購入品（機械・油空圧）</option><option>電気品</option><option>製作品</option></select>
+      <select id="pa-c" aria-label="分類">${cats().map(c=>`<option>${esc(c.c)}</option>`).join("")}</select>
+      <input type="text" id="pa-name" placeholder="品名" aria-label="品名">
+      <input type="text" id="pa-model" placeholder="型式（任意）" aria-label="型式">
+      <select id="pa-dk" aria-label="基準日"><option value="a1">基準：組立①</option><option value="a2">基準：組立②</option></select>
+      <input type="number" id="pa-days" placeholder="調達日数" aria-label="調達日数">
+      <input type="date" id="pa-dl" aria-label="手配期限を直接指定">
+      <button class="btn pri" id="pa-btn">品目を追加</button>
+    </div>
+  </div>`;
+}
+$("#plist").addEventListener("click",e=>{const b=e.target.closest("[data-pid]");if(!b)return;S.curProject=b.dataset.pid;PF="open";PFL={};save();renderProj();});
+$("#pdetail").addEventListener("click",e=>{
+  const p=curP(); if(!p) return; const t=e.target;
+  if(t.dataset.pf){PF=t.dataset.pf;renderProj();return;}
+  if(t.dataset.fclear){PFL={};renderProj();return;}
+  if(t.dataset.remove){const i=p.items.find(x=>x.iid===t.dataset.remove); if(i.extra){ if(!confirm("今回追加した品目を削除しますか？"))return; p.items=p.items.filter(x=>x!==i);} else {i.removed=true;} save();renderProj();toast("今回不要にしました");return;}
+  if(t.dataset.dlreset){ const i=p.items.find(x=>x.iid===t.dataset.dlreset); if(i){ i.fixDl=!!i.dlFixOrig; i.dlEdited=false;
+      if(!i.fixDl&&i.lead!==null){ const bd=pBase(p,i,i.dk||defDk(i.k,i.u)); i.dl=bd.n===null?null:bd.n-i.lead; } else i.dl=i.dlOrig;
+      save(); renderProj(); toast("手配期限を元に戻しました"); } return; }
+  if(t.dataset.restore){p.items.find(x=>x.iid===t.dataset.restore).removed=false;save();renderProj();toast("元に戻しました");return;}
+  if(t.id==="p-del"){ if(!confirm("案件「"+p.no+"」を削除します。完了の記録も消えます。よろしいですか？"))return; S.projects=S.projects.filter(x=>x!==p); S.curProject=null; save(); renderProj(); toast("案件を削除しました"); return;}
+  if(t.id==="p-ics"){makeIcs([p]);return;}
+  if(t.id==="p-csv"){
+    const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"', td=today();
+    const head=["状態","手配日","機械","ユニット","ユニット名称","区分","分類","品名","型式","基準日","手配期限","期限変更","余裕(日)","手配リード(日)","決める人","発注に最低限必要な情報","備考","今回追加"];
+    const lines=[["工事番号",p.no],["受注日",p.orderDate],["書き出し日",dstr(td)],[],head].map(a=>a.map(q).join(","));
+    [...p.items].filter(i=>!i.removed).sort((a,b)=>(a.dl??1e9)-(b.dl??1e9)).forEach(i=>lines.push([i.done?"完了":"未手配",i.doneDate,i.m,i.u,i.uname,i.k,i.c,i.name,i.model,i.fixDl?"期限指定":DKL[i.dk||defDk(i.k,i.u)],dstr(i.dl),i.dlEdited?"元："+dstr(i.dlOrig):"",i.done||i.dl===null?"":i.dl-td,i.lead??"",i.who,i.info,i.note,i.extra?"○":""].map(q).join(",")));
+    download("\uFEFF"+lines.join("\r\n"),p.no+"_手配状況_"+dstr(td).replace(/\//g,"")+".csv","text/csv"); return;}
+  if(t.id==="pa-btn"){
+    const m=$("#pa-m").value,u=$("#pa-u").value.trim().toUpperCase(),name=$("#pa-name").value.trim(),days=num($("#pa-days").value),dlIn=$("#pa-dl").value;
+    if(!name){toast("品名を入力してください");return;}
+    if(days===null&&!dlIn){toast("調達日数か手配期限のどちらかを入れてください");return;}
+    const c=$("#pa-c").value, cm=catMap()[c]||{}; const ek=$("#pa-k").value==="電気品"; const dk=ek?"pn":$("#pa-dk").value; const asm=(ek&&p.emachines)?(((p.emachines[m]||{}).pn)?dnum(p.emachines[m].pn):null):baseDate(p.machines[m],dk).n;
+    const lead=days===null?null:days+p.buf; const dl=dlIn?dnum(dlIn):(asm===null?null:asm-lead);
+    p.items.push({iid:"x"+Date.now(),m,u,uname:S.unitName[m+"|"+u]||"",k:$("#pa-k").value,c,name,model:$("#pa-model").value.trim(),days,lead,dl,src:"今回",judge:"",who:cm.who||"要確認",info:cm.info||"要確認",done:false,doneDate:"",note:"",extra:true,removed:false,fixDl:!!dlIn,dk});
+    save(); PF="open"; renderProj(); toast("「"+name+"」を追加しました"); return;}
+});
+$("#pdetail").addEventListener("input",e=>{ if(e.target.dataset.fk!=="q") return; PFL.q=e.target.value.trim(); const pos=e.target.selectionStart; renderProj(); const q=$('#pfilt [data-fk="q"]'); if(q){q.focus(); q.setSelectionRange(pos,pos);} });
+$("#pdetail").addEventListener("change",e=>{
+  const p=curP(); if(!p) return; const t=e.target;
+  if(t.dataset.fk){ if(t.dataset.fk!=="q"){PFL[t.dataset.fk]=t.value; renderProj();} return; }
+  if(t.id==="p-no"){const v=t.value.trim(); if(v){p.no=v; save(); renderProj();} return;}
+  if(t.dataset.pe){const m=t.dataset.pe; p.emachines[m].pn=t.value;
+    p.items.forEach(i=>{if((i.common||(i.m===m&&i.k==="電気品"))&&!i.fixDl&&i.lead!==null){ const bd=pBase(p,i,"pn"); i.dl=bd.n===null?null:bd.n-i.lead; }}); save(); renderProj(); toast("電気 "+m+" の手配期限を計算し直しました"); return;}
+  if(t.dataset.pm){const m=t.dataset.pm; const d=mdates(p.machines[m]); d[t.dataset.dk]=t.value; p.machines[m]=d;
+    p.items.forEach(i=>{if(i.common&&!i.fixDl&&i.lead!==null){ const bd=pBase(p,i); i.dl=bd.n===null?null:bd.n-i.lead; return; }
+      if(i.m===m&&!(p.emachines&&i.k==="電気品")&&!i.fixDl&&i.lead!==null){ const bd=baseDate(d,i.dk||defDk(i.k,i.u)); i.dl=bd.n===null?null:bd.n-i.lead; }}); save(); renderProj(); toast(m+"の手配期限を計算し直しました"); return;}
+  if(t.dataset.f==="dk"){ const i=p.items.find(x=>x.iid===t.dataset.iid); if(!i) return; i.dk=t.value;
+    if(!i.fixDl&&i.lead!==null){ const bd=pBase(p,i,i.dk); i.dl=bd.n===null?null:bd.n-i.lead; } save(); renderProj(); toast("基準日を「"+DKL[i.dk]+"」にして計算し直しました"); return; }
+  const i=p.items.find(x=>x.iid===t.dataset.iid); if(!i) return;
+  if(t.dataset.f==="done"){i.done=t.checked; i.doneDate=t.checked?(i.doneDate||new Date(today()*DAY).toISOString().slice(0,10)):""; save(); renderProj(); toast(t.checked?"完了にしました":"未手配に戻しました"); return;}
+  if(t.dataset.f==="doneDate"){i.doneDate=t.value; save(); return;}
+  if(t.dataset.f==="dl"){ const nv=t.value?dnum(t.value):null; if(nv===null){ renderProj(); return; }
+    if(!i.dlEdited){ i.dlOrig=i.dl; i.dlFixOrig=!!i.fixDl; } i.dlEdited=true; i.fixDl=true; i.dl=nv;
+    if(i.dl===i.dlOrig){ i.dlEdited=false; i.fixDl=i.dlFixOrig; }
+    save(); renderProj(); toast("手配期限を "+dstr(nv)+" に変更しました"); return;}
+  if(t.dataset.f==="note"){i.note=t.value; save(); return;}
+  if(t.dataset.f==="swap"){ const it=itemMap()[t.value]; if(!it) return; const cm=catMap()[it.c]||{};
+    if(!i.changed){ i.orig=i.name; } i.changed=true; i.itemId=it.id; i.name=it.name; i.days=num(it.lead); i.lead=i.days===null?null:i.days+p.buf;
+    i.who=cm.who||i.who; i.info=cm.info||i.info;
+    if(!i.fixDl){ const bd=pBase(p,i,i.dk||defDk(i.k,i.u)); i.dl=(bd.n===null||i.lead===null)?null:bd.n-i.lead; }
+    if(i.orig===i.name){ i.changed=false; i.orig=""; }
+    save(); renderProj(); toast("「"+it.name+"」に変更し、手配期限を計算し直しました"); return; }
+});
+
+
+
+// ---- 長納期品マスタ
+function usage(){const u={}; mrows().forEach(r=>{if(!S.rowOff[r.id]&&rowAlive(r)){const i=rItem(r);(u[i]=u[i]||new Set()).add(r.m);}}); return u;}
+function grpMap(){const g={}; items().forEach(i=>{(g[i.grp||i.id]=g[i.grp||i.id]||[]).push(i);}); return g;}
+function variantLabel(i){return [i.model||"型式未入力",i.maker,i.size].filter(Boolean).join("／")+"（"+(i.lead??"－")+"日）";}
+const OLD_DAYS=60;
+function confOf(i){return (S.itemEdit[i.id]||{}).conf||(i.id.startsWith("N")?i.conf:(S.initDate||todayIso()));}
+function isOld(i){const c=dnum(confOf(i)); return c!==null&&today()-c>=OLD_DAYS;}
+let LASTIT=null;
+function mchips(i,us){ const ms=[...(us[i.id]||[])].sort();
+  const allc=`<label class="allchk ${isCommon(i.id)?"on":""}"><input type="checkbox" data-iall="${i.id}" ${isCommon(i.id)?"checked":""}> すべての機械で使う</label>`;
+  if(isCommon(i.id)) return allc+(ms.length?`<div class="small" style="margin-top:2px">個別の指定：${esc(ms.join("・"))}（共通のため受注時は1行で表示）</div>`:"");
+  return allc+ms.map(m=>`<span class="mchip">${esc(m)}<button data-mrm="${i.id}|${esc(m)}" aria-label="${esc(m)}から外す" title="${esc(m)}から外す">×</button></span>`).join("")+`<button class="btn mplus" data-madd="${i.id}" aria-label="使う機械を追加">＋機械</button>`; }
+function renderItems(){
+  const cs=cats().map(c=>c.c), ms=machines();
+  const cm=$("#it-m").value; $("#it-m").innerHTML=`<option value="">すべての機械</option><optgroup label="機械（購入品・製作品）">`+ms.map(m=>`<option value="m:${esc(m)}" ${("m:"+m)===cm?"selected":""}>${esc(m)}</option>`).join("")+`</optgroup><optgroup label="電気品">`+emachines().map(m=>`<option value="e:${esc(m)}" ${("e:"+m)===cm?"selected":""}>電気 ${esc(m)}</option>`).join("")+`</optgroup>`;
+  const cc=$("#it-c").value; $("#it-c").innerHTML=`<option value="">すべての分類</option>`+cs.map(c=>`<option ${c===cc?"selected":""}>${esc(c)}</option>`).join("");
+  $("#ia-c").innerHTML=cs.map(c=>`<option>${esc(c)}</option>`).join("");
+  const fsel=$("#it-m").value, fe=fsel.startsWith("e:"), fm=fsel?fsel.slice(2):"", fmL=fe?"電気 "+fm:fm, fk=$("#it-k").value, fc=$("#it-c").value, q=$("#it-q").value.trim(), ch=$("#it-ch").checked, dv=$("#it-del").checked, ol=$("#it-old").checked, us=usage();
+  const col=new Intl.Collator("ja",{numeric:true}), KO={"購入品":0,"電気品":1,"製作品":2};
+  $("#ma-panel").hidden=!fm; $("#ma-title").textContent=fm?(fmL+" に長納期品を追加"):""; if(fm&&fe&&!$("#ma-u").value) $("#ma-u").value="EE";
+  if(fm) $("#ma-dl").innerHTML=items().filter(i=>fe?i.k==="電気品":i.k!=="電気品").map(i=>`<option value="${esc(i.id+"｜"+i.name+"｜"+i.k)}"></option>`).join("");
+  const im=Object.fromEntries(allItems().map(i=>[i.id,i]));
+  const keep=i=>(!fk||i.k===fk)&&(!fc||i.c===fc)&&(!q||[i.name,i.orig,i.c].join(" ").includes(q))&&(!ch||S.itemEdit[i.id]||i.id.startsWith("N"))&&(!ol||isOld(i))&&(dv?!!S.itemDel[i.id]:!S.itemDel[i.id]);
+  const leadCell=i=>`<td class="num"><input type="number" min="0" data-iid="${i.id}" data-f="lead" value="${esc(i.lead??"")}" style="width:80px" aria-label="最新納期（日）"></td>`;
+  const confCell=i=>{const conf=confOf(i),old=isOld(i);return `<td class="nw ${old?"old":""}">${esc(conf?dstr(dnum(conf)):"")}${old?`<span class="oldtag">${today()-dnum(conf)}日前</span>`:""}</td>`;};
+  const nameCell=i=>`<td><input type="text" data-iid="${i.id}" data-f="name" value="${esc(i.name)}" style="min-width:220px" aria-label="品名">${i.orig?`<div class="small">まとめた品名：${esc(i.orig)}</div>`:""}</td>`;
+  const delBtn=i=>S.itemDel[i.id]?`<button class="btn" data-irest="${i.id}">元に戻す</button>`:`<button class="btn dangerbtn" data-idel="${i.id}">削除</button>`;
+  let html="", cur="";
+  if(!fm){
+    const list=(dv?allItems():items()).filter(keep).sort((a,b)=>(KO[a.k]??9)-(KO[b.k]??9)||col.compare(a.name||"",b.name||""));
+    LASTIT={mode:"all",list,us};
+    $("#it-sum").innerHTML="";
+    html=`<thead><tr><th>品名</th><th>分類</th><th class="num">最新納期(日)</th><th>確認日</th><th>使っている機械（×で外す／＋で追加）</th><th>備考</th><th></th></tr></thead><tbody>`;
+    if(!list.length) html+=`<tr><td colspan="7" class="empty">該当する品目はありません</td></tr>`;
+    list.forEach(i=>{ if(i.k!==cur){cur=i.k; html+=`<tr class="sec"><td colspan="7">${esc(cur)}（${list.filter(x=>x.k===cur).length}品目）</td></tr>`;}
+      const msx=[...(us[i.id]||[])].sort().join("・")||"－", chg=!!(S.itemEdit[i.id]||i.id.startsWith("N"));
+      html+=`<tr class="${chg?"chg":""} ${S.itemDel[i.id]?"off":""}">${nameCell(i)}<td class="nw small">${esc(i.c)}</td>${leadCell(i)}${confCell(i)}<td class="small" style="min-width:170px">${S.itemDel[i.id]?esc(msx):mchips(i,us)}</td>
+      <td><input type="text" data-iid="${i.id}" data-f="note" value="${esc(i.note||"")}" style="min-width:200px" aria-label="備考"></td><td class="nw">${delBtn(i)}</td></tr>`; });
+  } else {
+    let rows=mrows().filter(r=>r.m===fm&&rowE(r)===fe&&!isCommon(rItem(r))).map(r=>({r,i:im[rItem(r)]})).filter(x=>x.i&&keep(x.i));
+    items().filter(i=>isCommon(i.id)&&keep(i)).forEach(i=>rows.push({r:{id:"all:"+i.id,m:fm,u:"共通",item:i.id,common:true},i}));
+    rows.sort((a,b)=>(KO[a.i.k]??9)-(KO[b.i.k]??9)||col.compare(a.i.name||"",b.i.name||"")||a.r.u.localeCompare(b.r.u));
+    LASTIT={mode:"machine",m:fmL.replace(" ","_"),rows};
+    const live=rows.filter(x=>!S.rowOff[x.r.id]&&!S.itemDel[x.i.id]&&num(x.i.lead)!==null);
+    $("#it-sum").innerHTML=["購入品","電気品","製作品"].map(k=>{const g=live.filter(x=>x.i.k===k);const mx=g.length?Math.max(...g.map(x=>+x.i.lead)):null;
+      return `<div><b>${g.length}件</b><span>${k}　最長 ${mx??"－"}日</span></div>`;}).join("")+`<div><b>${live.length?Math.max(...live.map(x=>+x.i.lead)):"－"}日</b><span>${esc(fmL)} 全体の最長納期</span></div>`;
+    html=`<thead><tr><th>品名</th><th>ユニット</th><th>分類</th><th class="num">最新納期(日)</th><th>確認日</th><th>基準日<br>（初期値）</th><th>この機械での備考</th><th>品目の備考</th><th>この機械で<br>使わない</th><th></th></tr></thead><tbody>`;
+    if(!rows.length) html+=`<tr><td colspan="10" class="empty">${(q||fk||fc||ch||ol||dv)?"条件に合う品目はありません":"この機械の長納期品はまだありません。下の欄から追加してください。"}</td></tr>`;
+    rows.forEach(({r,i})=>{ if(i.k!==cur){cur=i.k; html+=`<tr class="sec"><td colspan="10">${esc(cur)}（${rows.filter(x=>x.i.k===cur).length}件）</td></tr>`;}
+      const chg=!!(S.itemEdit[i.id]||i.id.startsWith("N")), added=r.id.startsWith("x");
+      const opts=items().filter(x=>x.c===i.c).sort((a,b)=>col.compare(a.name||"",b.name||""));
+      const sw=S.rowItem[r.id]&&S.rowItem[r.id]===i.id;
+      if(r.common){ html+=`<tr class="${chg?"chg":""}">${nameCell(i)}<td class="nw"><b>共通</b><div class="small">すべての機械</div></td><td class="nw small">${esc(i.c)}</td>${leadCell(i)}${confCell(i)}<td class="small">最も早い日</td><td class="small" colspan="1">－</td><td><input type="text" data-iid="${i.id}" data-f="note" value="${esc(i.note||"")}" style="min-width:160px" aria-label="品目の備考"></td><td class="small" style="text-align:center">－</td><td></td></tr>`; return; }
+      const sel=`<td><select data-rid="${r.id}" data-f="swap" aria-label="品目の付け替え" style="min-width:220px">${opts.map(x=>`<option value="${x.id}" ${x.id===i.id?"selected":""}>${esc(x.name)}（${x.lead??"－"}日）</option>`).join("")}</select>${sw?`<div class="small"><span class="extra" style="margin:0">付け替え済み（元：${esc((im[r.item]||{}).name||"")}）</span></div>`:""}</td>`;
+      html+=`<tr class="${chg?"chg":""} ${(S.rowOff[r.id]||S.itemDel[i.id])?"off":""}">${sel}<td class="nw"><b>${esc(r.u)}</b>${added?`<span class="extra">追加</span>`:""}</td><td class="nw small">${esc(i.c)}</td>${leadCell(i)}${confCell(i)}
+      <td>${dkSel(`data-rid="${r.id}" data-f="rdk"`,S.rowDate[r.id]||"a1","基準日の初期値（組立①か②）",isEE(r.u,i.k))}</td>
+      <td><input type="text" data-rid="${r.id}" data-f="rnote" value="${esc(S.rowNote[r.id]||"")}" style="min-width:160px" aria-label="この機械での備考"></td>
+      <td><input type="text" data-iid="${i.id}" data-f="note" value="${esc(i.note||"")}" style="min-width:160px" aria-label="品目の備考"></td>
+      <td style="text-align:center"><input type="checkbox" data-rid="${r.id}" data-f="off" ${S.rowOff[r.id]?"checked":""} aria-label="この機械で使わない"></td>
+      <td class="nw">${added?`<button class="btn dangerbtn" data-rdel="${r.id}">外す</button>`:""}</td></tr>`; });
+  }
+  $("#ittable").innerHTML=html+"</tbody>";
+}
+$("#itcols").addEventListener("change",e=>{const id=e.target.dataset.rid,f=e.target.dataset.f; if(!id)return;
+  if(f==="rnote"){ if(e.target.value) S.rowNote[id]=e.target.value; else delete S.rowNote[id]; }
+  if(f==="off"){ if(e.target.checked) S.rowOff[id]=true; else delete S.rowOff[id]; }
+  if(f==="rdk"){ const r=mrows().find(x=>x.id===id); const it=r?itemMap()[rItem(r)]:null; if(e.target.value==="a1") delete S.rowDate[id]; else S.rowDate[id]=e.target.value; toast("この機械での基準日の初期値を「"+DKL[e.target.value]+"」にしました"); }
+  if(f==="swap"){ const r=mrows().find(x=>x.id===id); if(r){ if(e.target.value===r.item) delete S.rowItem[id]; else S.rowItem[id]=e.target.value; }
+    toast("「"+(itemMap()[e.target.value]||{}).name+"」に付け替えました"); }
+  save(); renderItems();});
+$("#itcols").addEventListener("click",e=>{const id=e.target.dataset.rdel; if(!id)return; if(!confirm("追加した品目をこの機械から外しますか？"))return;
+  S.rowAdd=S.rowAdd.filter(r=>r.id!==id); delete S.rowNote[id]; delete S.rowOff[id]; delete S.rowItem[id]; save(); renderItems(); toast("外しました");});
+$("#ma-btn").addEventListener("click",()=>{
+  const m=$("#it-m").value.slice(2), u=$("#ma-u").value.trim().toUpperCase(), v=$("#ma-q").value.trim();
+  if(!m){toast("機械を選んでください");return;} if(!u){toast("ユニットを入力してください");return;}
+  const iid=v.split("｜")[0]; const it=itemMap()[iid];
+  if(!it){toast("候補から品目を選んでください（品名を入力すると候補が出ます）");return;}
+  const id="x"+Date.now(); S.rowAdd.push({id,m,u,item:iid,n:1}); if($("#ma-note").value.trim()) S.rowNote[id]=$("#ma-note").value.trim();
+  ["#ma-q","#ma-note"].forEach(s=>$(s).value=""); save(); renderItems(); toast(m+" "+u+" に「"+it.name+"」を追加しました");});
+let MADD=null;
+$("#itcols").addEventListener("change",e=>{const id=e.target.dataset.iall; if(!id) return; S.itemAll=S.itemAll||{};
+  if(e.target.checked) S.itemAll[id]=true; else delete S.itemAll[id];
+  save(); render(); toast(e.target.checked?"「"+(itemMap()[id]||{}).name+"」をすべての機械で使う品目にしました":"「すべての機械で使う」を解除しました");});
+$("#itcols").addEventListener("click",e=>{
+  const ad=e.target.closest("[data-madd]"), rm=e.target.closest("[data-mrm]");
+  if(ad){ const it=itemMap()[ad.dataset.madd]; if(!it) return; MADD=it.id; const used=usage()[it.id]||new Set();
+    $("#madd-name").textContent=it.name+"（"+it.k+"・"+it.c+"）";
+    const elec=it.k==="電気品"; $("#madddlg-t").textContent=elec?"使う電気の機械を追加":"使う機械を追加";
+    $("#madd-m").innerHTML=(elec?emachines():machines()).filter(m=>!used.has(m)).map(m=>`<option>${esc(m)}</option>`).join("")+`<option value="__new">（新しい名前を入力）</option>`; $("#madd-new").value=""; $("#madd-newrow").hidden=$("#madd-m").value!=="__new";
+    $("#madd-u").value=isEE("",it.k)?"EE":""; $("#madd-n").value=""; $("#madddlg").showModal(); return; }
+  if(rm){ const [iid,m]=rm.dataset.mrm.split("|"); const it=itemMap()[iid]; const rows=mrows().filter(r=>r.m===m&&rItem(r)===iid&&!S.rowOff[r.id]);
+    if(!confirm("「"+it.name+"」を "+m+" から外しますか？"+(rows.length>1?"（"+m+"の"+rows.length+"ユニット分）":"")+"\n"+m+"の受注時リストに出なくなります。")) return;
+    rows.forEach(r=>{ if(r.id.startsWith("x")){ S.rowAdd=S.rowAdd.filter(x=>x.id!==r.id); delete S.rowNote[r.id]; delete S.rowItem[r.id]; } else S.rowOff[r.id]=true; });
+    save(); render(); toast(m+" から外しました"); }
+});
+$("#madd-cancel").addEventListener("click",()=>$("#madddlg").close());
+$("#madd-m").addEventListener("change",()=>{$("#madd-newrow").hidden=$("#madd-m").value!=="__new";});
+$("#madd-ok").addEventListener("click",()=>{ let m=$("#madd-m").value; const u=$("#madd-u").value.trim().toUpperCase();
+  if(m==="__new"){ m=$("#madd-new").value.trim().toUpperCase(); if(!m){toast("新しい名前を入力してください");return;} const elec=itemK(MADD)==="電気品";
+    if(elec){ S.emachinesAdd=S.emachinesAdd||[]; if(!emachines().includes(m)) S.emachinesAdd.push(m); } else if(!machines().includes(m)) S.machinesAdd.push(m); }
+  if(!m){toast("追加できる機械がありません");return;} if(!u){toast("ユニットを入力してください");return;}
+  const old=mrows().find(r=>r.m===m&&r.u===u&&rItem(r)===MADD&&S.rowOff[r.id]);
+  let id; if(old){ delete S.rowOff[old.id]; id=old.id; } else { id="x"+Date.now(); S.rowAdd.push({id,m,u,item:MADD,n:1}); }
+  if($("#madd-n").value.trim()) S.rowNote[id]=$("#madd-n").value.trim();
+  $("#madddlg").close(); save(); render(); toast((itemMap()[MADD]||{}).name+" を "+m+"（"+u+"）に追加しました"); });
+$("#it-csv").addEventListener("click",()=>{
+  if(!LASTIT){toast("書き出す行がありません");return;}
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"', td=today(), cd=i=>{const c=confOf(i);return c?dstr(dnum(c)):"";}, cdays=i=>{const c=dnum(confOf(i));return c===null?"":td-c;};
+  const cond=[["区分",$("#it-k").value],["分類",$("#it-c").value],["検索",$("#it-q").value.trim()],["確認から60日以上だけ",$("#it-old").checked?"○":""],["更新した品目だけ",$("#it-ch").checked?"○":""],["削除した品目を表示",$("#it-del").checked?"○":""]].filter(x=>x[1]).map(x=>x[0]+"："+x[1]).join("／");
+  let head,lines,name;
+  if(LASTIT.mode==="all"){
+    head=["区分","品名","分類","最新納期(日)","確認日","確認からの日数","使っている機械","備考","まとめた品名","状態"];
+    lines=LASTIT.list.map(i=>[i.k,i.name,i.c,i.lead,cd(i),cdays(i),[...(LASTIT.us[i.id]||[])].sort().join("・"),i.note||"",i.orig||"",S.itemDel[i.id]?"削除済み":""]);
+    name="長納期品マスタ_全機械";
+  } else {
+    head=["機械","ユニット","区分","品名","分類","最新納期(日)","確認日","確認からの日数","基準日（初期値）","この機械での備考","品目の備考","この機械で使わない"];
+    lines=LASTIT.rows.map(({r,i})=>[r.m,r.u,i.k,i.name,i.c,i.lead,cd(i),cdays(i),isEE(r.u,i.k)?"盤組":DKL[S.rowDate[r.id]||"a1"],S.rowNote[r.id]||"",i.note||"",S.rowOff[r.id]?"○":""]);
+    name="長納期品マスタ_"+LASTIT.m;
+  }
+  if(!lines.length){toast("書き出す行がありません");return;}
+  const out=[["長納期品マスタ"],["書き出し日",dstr(td)],["絞り込み",cond||"なし"],["件数",lines.length],[],head].concat(lines).map(a=>a.map(q).join(","));
+  download("\uFEFF"+out.join("\r\n"),name+"_"+dstr(td).replace(/\//g,"")+".csv","text/csv"); toast(lines.length+"件を書き出しました");});
+["#it-m","#it-k","#it-c","#it-old","#it-ch","#it-del"].forEach(s=>$(s).addEventListener("change",renderItems)); $("#it-q").addEventListener("input",renderItems);
+$("#itcols").addEventListener("change",e=>{const id=e.target.dataset.iid,f=e.target.dataset.f; if(!id)return;
+  const add=S.itemAdd.find(x=>x.id===id); const tgt=add||(S.itemEdit[id]=S.itemEdit[id]||{});
+  if(f==="lead"){ tgt.lead=e.target.value===""?null:+e.target.value; if(!add&&e.target.value===""){ delete tgt.lead; } toast("最新納期を更新しました（使っているすべての機械に反映）"); }
+  tgt.conf=todayIso();
+  if(["note","name","model","maker","size"].includes(f)) tgt[f]=e.target.value;
+  if(f==="c") tgt.c=e.target.value;
+  if(!add&&Object.keys(tgt).length===0) delete S.itemEdit[id];
+  save(); renderItems();});
+$("#itcols").addEventListener("click",e=>{
+  const sp=e.target.dataset.isplit;
+  if(sp){ const src=itemMap()[sp]; if(!src) return;
+    const nid="N"+Date.now(); S.itemAdd.push({id:nid,grp:src.grp||src.id,k:src.k,c:src.c,name:src.name,model:"",maker:src.maker||"",size:"",sup:src.sup||"",n:0,med:null,max:null,lead:src.lead,conf:todayIso(),src:"分割",note:""});
+    if(!src.grp && !src.id.startsWith("N")){ S.itemEdit[src.id]=Object.assign(S.itemEdit[src.id]||{},{grp:src.id}); }
+    save(); $("#it-q").value=src.name; renderItems(); toast("「"+src.name+"」の新しい種類を作りました。型式・メーカー・サイズ・最新納期を入力し、機械別リストで付け替えてください"); return; }
+  const rs=e.target.dataset.irest; if(rs){ delete S.itemDel[rs]; save(); renderItems(); toast("元に戻しました"); return; }
+  const id=e.target.dataset.idel; if(!id)return; const it=itemMap()[id]; const ms=[...(usage()[id]||[])].sort();
+  const msg="「"+it.name+"」を削除しますか？"+(ms.length?"\nこの品目は "+ms.join("・")+" で使われています。削除すると、これらの機械のリストと受注時リストにも出なくなります。":"")+"\n（「削除した品目を表示」から元に戻せます）";
+  if(!confirm(msg))return; S.itemDel[id]=true; save(); renderItems(); toast("削除しました");});
+$("#ia-btn").addEventListener("click",()=>{const name=$("#ia-name").value.trim(); const lead=num($("#ia-lead").value);
+  if(!name){toast("品名を入力してください");return;} if(lead===null){toast("最新納期（日）を入力してください");return;}
+  const nid="N"+Date.now(); S.itemAdd.push({id:nid,grp:$("#ia-k").value+"|"+name,k:$("#ia-k").value,c:$("#ia-c").value,name,model:"",maker:"",size:"",sup:"",n:0,med:null,max:null,lead,conf:todayIso(),src:"登録",note:$("#ia-note").value.trim()});
+  ["#ia-name","#ia-lead","#ia-note"].forEach(s=>$(s).value=""); save(); renderItems(); toast("「"+name+"」を登録しました。機械別リストで機械に追加できます");});
+
+// ---- 分類
+const YOMI={"空圧機器":"くうあつきき","減速機・ギヤードモータ":"げんそくき","潤滑機器":"じゅんかつきき","油圧シリンダ":"ゆあつしりんだ","油圧モーター":"ゆあつもーたー","油圧ユニット":"ゆあつゆにっと","溶接機・専用装置":"ようせつき","押ボタン・表示灯":"おしぼたん","駆動制御装置・電源ユニット":"くどうせいぎょそうち","制御盤・操作盤・箱":"せいぎょばん","盤内部品・電気小物":"ばんないぶひん","購入品の追加工":"こうにゅうひんのついかこう","歯車":"はぐるま","軸・ねじ類":"じく","小物部品（機械加工）":"こものぶひん","刃物":"はもの"};
+function catKind(c,byK){const b=byK[c.c]; if(b){let best=null,bn=-1; ["購入品","電気品","製作品"].forEach(k=>{if((b[k]||0)>bn){bn=b[k]||0;best=k;}}); if(bn>0) return best;}
+  return c.k||"購入品";}
+function renderCats(){
+  const counts={}, byK={}; items().forEach(i=>{counts[i.c]=(counts[i.c]||0)+1; (byK[i.c]=byK[i.c]||{})[i.k]=((byK[i.c]||{})[i.k]||0)+1;});
+  const col=new Intl.Collator("ja",{numeric:true}), KO={"購入品":0,"電気品":1,"製作品":2,"その他":3};
+  const list=cats().map(c=>Object.assign(c,{sec:c.c==="その他"?"その他":catKind(c,byK)})).sort((a,b)=>KO[a.sec]-KO[b.sec]||col.compare(YOMI[a.c]||a.c,YOMI[b.c]||b.c));
+  let cur="";
+  $("#ctable").innerHTML=`<thead><tr><th>分類名</th><th class="num">品目数</th><th>決める人</th><th>発注に最低限必要な情報</th><th></th></tr></thead><tbody>`+
+  list.map(c=>(c.sec!==cur?(cur=c.sec,`<tr class="sec"><td colspan="5">${esc(cur)}（${list.filter(x=>x.sec===cur).length}分類）</td></tr>`):"")+`<tr><td><input type="text" data-c="${esc(c.c)}" data-f="name" value="${esc(c.c)}" style="min-width:200px;font-weight:700" aria-label="分類名"></td><td class="num">${counts[c.c]||0}</td>
+  <td><select data-c="${esc(c.c)}" data-f="who" aria-label="${esc(c.c)}を決める人" style="width:auto">${WHO.map(w=>`<option ${w===c.who?"selected":""}>${w}</option>`).join("")}</select></td>
+  <td><input type="text" data-c="${esc(c.c)}" data-f="info" value="${esc(c.info)}" style="min-width:420px" aria-label="${esc(c.c)}の必要情報"></td>
+  <td class="nw">${c.c==="その他"?`<span class="small">削除不可</span>`:`<button class="btn dangerbtn" data-cdel="${esc(c.c)}">削除</button>`}</td></tr>`).join("")+"</tbody>";
+}
+$("#ctable").addEventListener("change",e=>{const c=e.target.dataset.c,f=e.target.dataset.f; if(!c)return;
+  if(f==="name"){ const nv=e.target.value.trim();
+    if(!nv||nv===c){ e.target.value=c; return; }
+    if(cats().some(x=>x.c===nv)){ toast("同じ名前の分類があります"); e.target.value=c; return; }
+    if(c==="その他"){ toast("「その他」は名前を変えられません"); e.target.value=c; return; }
+    S.catRename[c]=nv; if(S.catEdit[c]){ S.catEdit[nv]=S.catEdit[c]; delete S.catEdit[c]; }
+    save(); render(); toast("分類名を「"+nv+"」に変更しました"); return; }
+  S.catEdit[c]=Object.assign(S.catEdit[c]||{},{[f]:e.target.value}); save(); renderOrder();});
+$("#ctable").addEventListener("click",e=>{const c=e.target.dataset.cdel; if(!c)return;
+  const n=items().filter(i=>i.c===c).length;
+  if(!confirm("分類「"+c+"」を削除しますか？"+(n?"\nこの分類の品目"+n+"件は「その他」に移ります。":"")))return;
+  S.catDel[c]=true; save(); render(); toast("分類を削除しました");});
+$("#nc-btn").addEventListener("click",()=>{const n=$("#nc-name").value.trim(); if(!n){toast("分類名を入力してください");return;}
+  if(catMap()[n]){toast("同じ名前の分類があります");return;} if(S.catDel[n]) delete S.catDel[n];
+  S.catAdd.push({c:n,k:$("#nc-k").value,who:$("#nc-who").value,info:$("#nc-info").value});
+  ["#nc-name","#nc-info"].forEach(s=>$(s).value=""); save(); renderCats(); toast(n+" を追加しました");});
+
+// ---- settings
+function renderSet(){
+  $("#s-mail").value=S.settings.mail||""; $("#s-long").value=S.settings.long; $("#s-warn").value=S.settings.warn; $("#s-buf").value=S.settings.buf;
+  $("#last-ex").textContent=S.lastExport?("最後に書き出した日時："+S.lastExport):"";
+  const ms=[...new Set(machines().concat(emachines()))].sort(); const cur=$("#un-m").value||ms[0];
+  $("#un-m").innerHTML=ms.map(m=>`<option ${m===cur?"selected":""}>${esc(m)}</option>`).join("");
+  const us=[...new Set(BASE.units.filter(x=>x.m===cur).map(x=>x.u).concat(mrows().filter(r=>r.m===cur).map(r=>r.u)))].sort();
+  $("#un-list").innerHTML=us.map(u=>`<div class="field"><label>${esc(u)}</label><input type="text" data-k="${esc(cur+"|"+u)}" value="${esc(S.unitName[cur+"|"+u]||"")}" aria-label="${esc(u)}の名称"></div>`).join("")||`<p class="small">ユニットがありません</p>`;
+}
+[["#s-long","long"],["#s-warn","warn"],["#s-buf","buf"]].forEach(([s,k])=>$(s).addEventListener("change",e=>{S.settings[k]=+e.target.value||0;save();toast("保存しました");}));
+$("#s-mail").addEventListener("change",e=>{S.settings.mail=e.target.value.trim();save();toast("宛先を保存しました");});
+$("#un-m").addEventListener("change",renderSet);
+$("#un-list").addEventListener("change",e=>{const k=e.target.dataset.k;if(!k)return; if(e.target.value) S.unitName[k]=e.target.value; else delete S.unitName[k]; save();});
+$("#ex-btn").addEventListener("click",()=>{
+  S.lastExport=new Date().toLocaleString("ja-JP"); save();
+  const out={tool:"longlead-simple",ver:1,base:BASE.version,exported:S.lastExport,data:Object.assign({},S,{order:undefined})};
+  download(JSON.stringify(out,null,1),"長納期データ_"+dstr(today()).replace(/\//g,"")+".json","application/json"); renderSet();});
+$("#im-file").addEventListener("change",e=>{const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
+  rd.onload=()=>{try{const j=JSON.parse(rd.result); if(!j.data||(j.tool!=="longlead-simple"&&j.tool!=="longlead")) throw 0; const full=j.tool==="longlead-simple";
+    if(!full && !confirm("型式あり版で書き出したファイルです。案件・設定・分類・ユニット名称だけを読み込みます。続けますか？")) return;
+    if(full && !confirm("マスタ・分類・設定・保存した案件を、このファイルの内容に置き換えます（受注時リストの入力中の内容はそのまま）。よろしいですか？"))return;
+    const keep=S.order;
+    if(full) S=Object.assign(structuredClone(DEF),j.data,{order:keep});
+    else { ["projects","curProject","settings","catEdit","catAdd","unitName","machinesAdd"].forEach(k=>{if(j.data[k]!==undefined) S[k]=j.data[k];}); }
+    save(); render(); toast("読み込みました（"+(j.exported||"")+"）");
+  }catch(err){toast("このツールで書き出したファイルを選んでください");}};
+  rd.readAsText(f); e.target.value="";});
+$("#reset-btn").addEventListener("click",()=>{ if(!confirm("マスタの変更・分類・受注情報・保存した案件をすべて消して初期データに戻します。先に「書き出す」で保存しておくことをおすすめします。続けますか？"))return;
+  S=structuredClone(DEF); save(); render(); toast("初期データに戻しました");});
+
+function render(){ renderMachines(); renderOrder(); renderProj(); renderItems(); renderCats(); renderSet(); }
+if(!S.initDate){ S.initDate=todayIso(); save(); }
+render();
+</script>
+<script src="longlead-db.js"></script>
+</body>
+</html>
